@@ -1,4 +1,6 @@
-# VISUALIZER
-BORDER_SIZE = 7
-CANVAS = [664, 454]
-POSITION_WIDTH = 50
+VISUALIZER = {
+    "BORDER_SIZE": 7,
+    "CANVAS_SIZE": [664, 454],
+    "POSITION_SCALE": 50,
+    "BOARD": "/assets/board.png"
+}
