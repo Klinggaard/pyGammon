@@ -1,0 +1,1 @@
+playerColors = ['blue', 'red']
