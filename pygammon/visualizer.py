@@ -1,8 +1,8 @@
 import os
 import pyglet
 from pyglet.window import key
-from pyGammon.config import VISUALIZER
-from pyGammon.utils import playerColors
+from pygammon.config import VISUALIZER
+from pygammon.utils import playerColors
 #TODO: Make a visualizer class which allows the game to be visualized whilst being played
 
 

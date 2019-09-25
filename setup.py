@@ -2,7 +2,7 @@
 from setuptools import setup
 
 setup(
-    name='pyGammon',
+    name='pygammon',
     version='0.0.1',
     install_requires=[
         'numpy',
