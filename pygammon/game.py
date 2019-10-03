@@ -10,10 +10,12 @@ class GameState:
         if state is not None:
             self.state = state
         else:
-            # Setup game
             self.state = np.empty((2, 15), dtype=np.int)  # 2 players, 15 tokens per player
         if not empty:
-            self.state.fill(-1)
+            # Setup game
+            self.state[0] = [6, 6, 6, 6, 6, 8, 8, 8, 13, 13, 13, 13, 13, 24, 24]
+            self.state[1] = [19, 19, 19, 19, 19, 17, 17, 17, 12, 12, 12, 12, 12, 1, 1]
+
 
     def copy(self):
         return GameState(self.state.copy())
@@ -33,8 +35,11 @@ class GameState:
             return tokens
         relTokens = []
         for tokenID, tokenPos in enumerate(tokens):
-            #TODO: add different states the tokens can be in
             print(tokenID, tokenPos)
+            if tokenPos == -1 or tokenPos == 99:  # center and end pos are independent of player id
+                relTokens.append(tokenPos)
+            else:
+                relTokens.append(11 - (tokenPos - 12))  # flips the list values, so 23 becomes 0
 
 
     def getStateRelativeToPlayer(self, relativePlayerID):
@@ -42,7 +47,7 @@ class GameState:
             return self.copy()
 
         rel = GameState(empty=True)
-        newPlayerIDs = [(x - relativePlayerID) % 2 for x in range(4)]
+        newPlayerIDs = [(x - relativePlayerID) % 2 for x in range(2)]
         for playerID, playerTokens in enumerate(self):
             newPlayerID = newPlayerIDs[playerID]
             rel[newPlayerID] = self.getTokensRelativeToPlayer(playerTokens, relativePlayerID)
@@ -51,7 +56,22 @@ class GameState:
     def moveToken(self, tokenID, diceRolls):
         # diceRolls is a list of the two dice rolls
         # TODO: Implement moving system
-        print("move")
+
+        currPos = self[0][tokenID]
+        if currPos == 99:
+            return False
+
+        newState = self.copy()
+        player = newState[0]
+        opponents = newState[1:]
+
+
+
+    def get_winner(self):
+        for player_id in range(2):
+            if np.all(self[player_id] == 99):
+                return player_id
+        return None
 
 
 class Game:
@@ -81,6 +101,9 @@ class Game:
                 tokenID = np.argwhere(relativeNextStates is not False)[0][0]
             self.state = relativeNextStates[tokenID].getStateRelativeToPlayer((-self.currentPlayerId) % 2)
 
-    # TODO: Implement playFullGame
+    def playFullGame(self):
+        while not self.state.getWinner():
+            self.step()
+        return self.state.getWinner()
 
 
