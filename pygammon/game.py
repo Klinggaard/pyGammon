@@ -137,19 +137,69 @@ class GameState:
         return newState
 
     def moveTokenHome(self, firstTokenID, secondTokenID, diceRolls):
-        # TODO: Implement the move tokens Home
+        # TODO: Implement that it is possible to move a token even though you can bear it off
         # diceRolls is a list of the two dice rolls
         firstCurPos = self[0][firstTokenID]
         secondCurPos = self[0][secondTokenID]
+
         if firstCurPos == 99 or secondCurPos == 99:
             return False
+
         newState = self.copy()
         player = newState[0]
         opponents = newState[1]
-        player[firstTokenID] = 99
-        player[secondTokenID] = 99
+
+        firstTargetPos = firstCurPos + diceRolls[0]
+        secondTargetPos = secondCurPos + diceRolls[1]
+        firstSpaceOccupants = opponents == firstTargetPos
+        secondSpaceOccupants = opponents == secondTargetPos
+
+        if (12 - (firstCurPos-12)) == diceRolls[0]:
+            player[firstTokenID] = 99
+        elif firstTargetPos < 24 and np.sum(firstSpaceOccupants) < 2:
+            player[firstTokenID] = firstTargetPos
+            if np.sum(firstSpaceOccupants) == 1:
+                opponents[firstSpaceOccupants] = -1
+        else:
+            return False
+
+        if firstTokenID == secondTokenID:
+            return newState
+
+        if (12 - (secondCurPos - 12)) == diceRolls[1]:
+            player[secondTokenID] = 99
+        elif secondTargetPos < 24 and np.sum(secondSpaceOccupants) < 2:
+            player[secondTokenID] = secondTargetPos
+            if np.sum(secondSpaceOccupants) == 1:
+                opponents[secondSpaceOccupants] = -1
+        else:
+            return False
 
         return newState
+
+    def moveOneToken(self, diceRolls):
+        # TODO: Implement this function
+        newState = self.copy()
+        player = newState[0]
+        opponents = newState[1]
+        for tokenID in range(15):
+            curPos = self[0][tokenID]
+            firstTargetPos = curPos + diceRolls[0]
+            secondTargetPos = curPos + diceRolls[1]
+            firstSpaceOccupants = opponents == firstTargetPos
+            secondSpaceOccupants = opponents == secondTargetPos
+
+    def moveOneTokenHome(self, diceRolls):
+        # TODO: Implement this function
+        newState = self.copy()
+        player = newState[0]
+        opponents = newState[1]
+        for tokenID in range(15):
+            curPos = self[0][tokenID]
+            firstTargetPos = curPos + diceRolls[0]
+            secondTargetPos = curPos + diceRolls[1]
+            firstSpaceOccupants = opponents == firstTargetPos
+            secondSpaceOccupants = opponents == secondTargetPos
 
     def getWinner(self):
         for player_id in range(2):
@@ -174,16 +224,24 @@ class Game:
 
         relativeState = state.getStateRelativeToPlayer(self.currentPlayerId)
 
-        #TODO: Needs to handle if only one token can move
+        #TODO: Needs to handle if only one die can be used
         if all(item >= 18 for item in relativeState[0]):
             relativeNextStates = np.array([
                 relativeState.moveTokenHome(firstTokenID, secondTokenID, diceRolls) for firstTokenID in range(15) for
                 secondTokenID in range(15)]
             )
+            if np.all(relativeNextStates is False):
+                relativeNextStates = np.array(
+                    relativeState.moveOneTokenHome(diceRolls)
+                )
         else:
             relativeNextStates = np.array([
                 relativeState.moveToken(firstTokenID, secondTokenID, diceRolls) for firstTokenID in range(15) for secondTokenID in range(15)]
             )
+            if np.all(relativeNextStates is False):
+                relativeNextStates = np.array(
+                    relativeState.moveOneToken(diceRolls)
+                )
         if np.any(relativeNextStates is not False):
             tokenID = player.play(relativeState, diceRolls, relativeNextStates)
             if not tokenID:
@@ -199,8 +257,8 @@ class Game:
 
     def playFullGame(self):
         while self.state.getWinner() == -1:
-            print("Player 1", " State: ", self.state[0])
-            print("Player 2", " State: ", self.state[1])
+            #print("Player 1", " State: ", self.state[0])
+            #print("Player 2", " State: ", self.state[1])
             self.step()
         return self.state.getWinner()
 
