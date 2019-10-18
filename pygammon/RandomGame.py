@@ -9,9 +9,9 @@ class randomPlayer:
 
     @staticmethod
     def play(state, dice_roll, next_states):
-        if all(item==False for item in next_states):
-            return False
-        return random.choice(np.argwhere(next_states != False))
+        choice = random.randrange(len(next_states))
+        #print(choice)
+        return choice
 
 
 players = [randomPlayer(), randomPlayer()]

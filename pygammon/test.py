@@ -13,6 +13,12 @@ relativeNextStates = np.array([[
 occupants = relativeNextStates == 1
 occupant_count = np.sum(occupants)
 
+array = np.asarray([1,2,3,4,5,6,7])
+
+print(array)
+print(array.flatten("C"))
+
+
 print(occupants)
 print("oc", occupant_count)
 print("count", np.sum(occupants))

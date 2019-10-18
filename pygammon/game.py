@@ -1,8 +1,7 @@
 import random
 import logging
 import numpy as np
-from pygammon.utils import playerColors
-
+from pygammon import config as cf
 
 # noinspection PyPep8Naming
 class GameState:
@@ -10,12 +9,12 @@ class GameState:
         if state is not None:
             self.state = state
         else:
-            self.state = np.empty((2, 15), dtype=np.int)  # 2 players, 15 tokens per player
+            self.state = np.empty((2, 26), dtype=np.int)  # 2 players, 15 tokens per player
             if not empty:
                 # Setup game
-                self.state[0] = [18, 18, 18, 18, 18, 16, 16, 16, 11, 11, 11, 11, 11, 0, 0]
-                self.state[1] = [5, 5, 5, 5, 5, 7, 7, 7, 12, 12, 12, 12, 12, 23, 23]
-
+                # Last positions are goal and prison in that order
+                self.state[0] = [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, 0, 0, 0]
+                self.state[1] = [0, 0, 0, 0, 0, 5, 0, 3, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0]
 
     def copy(self):
         return GameState(self.state.copy())
@@ -29,153 +28,161 @@ class GameState:
     def __iter__(self):
         return self.state.__iter__()
 
-    @staticmethod
-    def getTokensRelativeToPlayer(tokens, playerID):
-        if playerID is 0:
-            return tokens
-        relTokens = []
-        for tokenID, tokenPos in enumerate(tokens):
-            #print(tokenID, tokenPos)
-            if tokenPos == -1 or tokenPos == 99:  # center and end pos are independent of player id
-                relTokens.append(tokenPos)
-            else:
-                relTokens.append(11 - (tokenPos - 12))  # flips the list values, so 23 becomes 0
-        return relTokens
-
     def getStateRelativeToPlayer(self, relativePlayerID):
         if relativePlayerID == 0:
             return GameState(self.state.copy())
 
         rel = GameState(empty=True)
-        newPlayerIDs = [(x - relativePlayerID) % 2 for x in range(2)]
-        for playerID, playerTokens in enumerate(self):
-            newPlayerID = newPlayerIDs[playerID]
-            rel[newPlayerID] = self.getTokensRelativeToPlayer(playerTokens, relativePlayerID)
+        newPlayerIDs = 1
+        rel0 = np.flip(self.state[1][0:24:1])
+        rel[0] = np.append(rel0, self.state[1][24:26:1])
+        rel1 = np.flip(self.state[0][0:24:1])
+        rel[1] = np.append(rel1, self.state[0][24:26:1])
         return rel
 
-    def moveToken(self, firstTokenID, secondTokenID, diceRolls):
-        # diceRolls is a list of the two dice rolls
-        newState = self.copy()
-        player = newState[0]
-        opponents = newState[1]
-
-        firstCurPos = self[0][firstTokenID]
-        secondCurPos = self[0][secondTokenID]
-        firstTargetPos = firstCurPos + diceRolls[0]
-        secondTargetPos = secondCurPos + diceRolls[1]
-        firstSpaceOccupants = opponents == firstTargetPos
-        secondSpaceOccupants = opponents == secondTargetPos
-        firstDieOccupants = opponents == diceRolls[0]-1  # Die Roll of one equal space 0
-        secondDieOccupants = opponents == diceRolls[1]-1
-
-
-        if np.sum(firstSpaceOccupants) > 1 or np.sum(secondSpaceOccupants) > 1:
-            return False
-
-        # One of the tokens in goal
-        if firstCurPos == 99 or secondCurPos == 99:
-            return False
-        # One of the tokens in move past goal
-        if firstTargetPos > 23 or secondTargetPos > 23:
-            return False
-
-        prison = sum(i == -1 for i in self[0])
+    def moveToken(self, diceRolls):
         # TODO: Implement moving the same token twice
-        if firstTokenID == secondTokenID:
-            return False
-        else:
-            # If more than one of the tokens are in "prison"
-            if prison > 1:
-                # If it is not both of the tokens, no move possible
-                if not self[0][firstTokenID] == -1 and self[0][secondTokenID] == -1:
-                    return False
-                else:
-                    if np.sum(firstDieOccupants) > 1 or np.sum(secondDieOccupants) > 1:
-                        return False
-                    if np.sum(firstDieOccupants) == 1:
-                        opponents[firstDieOccupants] = -1
-                    if np.sum(secondDieOccupants) == 1:
-                        opponents[secondDieOccupants] = -1
-                    player[firstTokenID] = diceRolls[0]-1
-                    player[secondTokenID] = diceRolls[1]-1
-
-            # If only one of the tokens are in "prison"
-            elif prison == 1:
-                # If it is not one of the tokens, no move possible
-                if not self[0][firstTokenID] == -1 or self[0][secondTokenID] == -1:
-                    return False
-                else:
-                    if self[0][firstTokenID] == -1:
-                        if np.sum(firstDieOccupants) > 1 or np.sum(secondSpaceOccupants) > 1:
-                            return False
-                        if np.sum(firstDieOccupants) == 1:
-                            opponents[firstDieOccupants] = -1
-                        if np.sum(secondSpaceOccupants) == 1:
-                            opponents[secondSpaceOccupants] = -1
-
-                        player[firstTokenID] = diceRolls[0] - 1
-                        player[secondTokenID] = secondTargetPos
-                    else:
-                        if np.sum(firstSpaceOccupants) > 1 or np.sum(secondDieOccupants) > 1:
-                            return False
-                        if np.sum(firstSpaceOccupants) == 1:
-                            opponents[firstSpaceOccupants] = -1
-                        if np.sum(secondDieOccupants) == 1:
-                            opponents[secondDieOccupants] = -1
-
-                        player[firstTokenID] = firstTargetPos
-                        player[secondTokenID] = diceRolls[1]-1
-            else:
-                # Check for opponent occupied by spaces
-                if np.sum(firstSpaceOccupants) == 1:
-                    opponents[firstSpaceOccupants] = -1
-                if np.sum(secondSpaceOccupants) == 1:
-                    opponents[secondSpaceOccupants] = -1
-                player[firstTokenID] = firstTargetPos
-                player[secondTokenID] = secondTargetPos
-
-        return newState
-
-    def moveTokenHome(self, firstTokenID, secondTokenID, diceRolls):
-        # TODO: Implement that it is possible to move a token even though you can bear it off
         # diceRolls is a list of the two dice rolls
-        firstCurPos = self[0][firstTokenID]
-        secondCurPos = self[0][secondTokenID]
+        possibleStates = []
+        indices = np.where(self[0] > 0)[0]
+        for x in indices:
+            for y in indices:
+                newState = self.copy()
+                player = newState[0]
+                opponents = newState[1]
 
-        if firstCurPos == 99 or secondCurPos == 99:
-            return False
+                firstTargetPos = x + diceRolls[0]
+                secondTargetPos = y + diceRolls[1]
 
-        newState = self.copy()
-        player = newState[0]
-        opponents = newState[1]
+                if x == cf.GOAL or y == cf.GOAL:
+                    continue
 
-        firstTargetPos = firstCurPos + diceRolls[0]
-        secondTargetPos = secondCurPos + diceRolls[1]
-        firstSpaceOccupants = opponents == firstTargetPos
-        secondSpaceOccupants = opponents == secondTargetPos
+                prison = self[0][cf.PRISON]
+                # If more than one of the tokens are in "prison"
+                if prison > 1:
+                    # If it is not both of the tokens, no move possible
+                    if not (x == cf.PRISON and y == cf.PRISON):
+                        continue
+                    else:
+                        if opponents[diceRolls[0]-1] > 1 or opponents[diceRolls[1]-1] > 1:
+                            continue
+                        if opponents[diceRolls[0]-1] == 1:
+                            opponents[diceRolls[0]-1] -= 1
+                            opponents[cf.PRISON] += 1
+                        if opponents[diceRolls[1]-1] == 1:
+                            opponents[diceRolls[1] - 1] -= 1
+                            opponents[cf.PRISON] += 1
+                        player[diceRolls[0]-1] += 1
+                        player[cf.PRISON] -= 1
+                        player[diceRolls[1]-1] += 1
+                        player[cf.PRISON] -= 1
+                        possibleStates.append(newState)
 
-        if (12 - (firstCurPos-12)) == diceRolls[0]:
-            player[firstTokenID] = 99
-        elif firstTargetPos < 24 and np.sum(firstSpaceOccupants) < 2:
-            player[firstTokenID] = firstTargetPos
-            if np.sum(firstSpaceOccupants) == 1:
-                opponents[firstSpaceOccupants] = -1
-        else:
-            return False
+                # If only one of the tokens are in "prison"
+                elif prison == 1:
+                    # If it is not one of the tokens, no move possible
+                    if not (x == cf.PRISON or y == cf.PRISON):
+                        continue
+                    else:
+                        if x == cf.PRISON:
+                            if secondTargetPos > 23:
+                                continue
+                            if opponents[diceRolls[0]-1] > 1 or opponents[secondTargetPos] > 1:
+                                continue
+                            if opponents[diceRolls[0]-1] == 1:
+                                opponents[diceRolls[0] - 1] -= 1
+                                opponents[cf.PRISON] += 1
+                            if opponents[secondTargetPos] == 1:
+                                opponents[secondTargetPos] -= 1
+                                opponents[cf.PRISON] += 1
 
-        if firstTokenID == secondTokenID:
-            return newState
+                            player[diceRolls[0] - 1] += 1
+                            player[cf.PRISON] -= 1
+                            player[secondTargetPos] += 1
+                            player[y] -= 1
+                            possibleStates.append(newState)
+                        else:
+                            if firstTargetPos > 23:
+                                continue
+                            if opponents[firstTargetPos] > 1 or opponents[diceRolls[1]-1] > 1:
+                                continue
+                            if opponents[firstTargetPos] == 1:
+                                opponents[firstTargetPos] -= 1
+                                opponents[cf.PRISON] += 1
+                            if opponents[diceRolls[1]-1] == 1:
+                                opponents[diceRolls[1] - 1] -= 1
+                                opponents[cf.PRISON] += 1
+                            player[firstTargetPos] += 1
+                            player[x] -= 1
+                            player[diceRolls[1] - 1] += 1
+                            player[cf.PRISON] -= 1
+                            possibleStates.append(newState)
+                else:
+                    if firstTargetPos > 23 or secondTargetPos > 23:
+                        continue
+                    if x == y and player[x] < 2:
+                        continue
+                    # Check for opponent occupied by spaces
+                    if opponents[firstTargetPos] == 1:
+                        opponents[firstTargetPos] -= 1
+                        opponents[cf.PRISON] += 1
+                    if opponents[secondTargetPos] == 1:
+                        opponents[secondTargetPos] -= 1
+                        opponents[cf.PRISON] += 1
+                    player[firstTargetPos] += 1
+                    player[x] -= 1
+                    player[secondTargetPos] += 1
+                    player[y] -= 1
+                    possibleStates.append(newState)
 
-        if (12 - (secondCurPos - 12)) == diceRolls[1]:
-            player[secondTokenID] = 99
-        elif secondTargetPos < 24 and np.sum(secondSpaceOccupants) < 2:
-            player[secondTokenID] = secondTargetPos
-            if np.sum(secondSpaceOccupants) == 1:
-                opponents[secondSpaceOccupants] = -1
-        else:
-            return False
+        return np.asarray(possibleStates)
 
-        return newState
+    def moveTokenHome(self, diceRolls):
+        # TODO: Return two states when tokenIds are the same
+        # TODO: Can bear off the last relative to the goal with higher number.
+        # diceRolls is a list of the two dice rolls
+        possibleStates = []
+        indices = np.where(self[0] > 0)[0]
+        for x in indices:
+            for y in indices:
+                if x == cf.GOAL or y == cf.GOAL:
+                    continue
+                newState = self.copy()
+                player = newState[0]
+                opponents = newState[1]
+                if x == y and player[x] < 2:
+                    continue
+                firstTargetPos = x + diceRolls[0]
+                secondTargetPos = y + diceRolls[1]
+                if firstTargetPos < 24:
+                    opponents[firstTargetPos] = opponents[firstTargetPos]
+                if secondTargetPos < 24:
+                    opponents[secondTargetPos] = opponents[secondTargetPos]
+                if (12 - (x-12)) == diceRolls[0]:
+                    player[x] -= 1
+                    player[cf.GOAL] += 1
+                elif firstTargetPos < 24 and opponents[firstTargetPos] < 2:
+                    if opponents[firstTargetPos] == 1:
+                        opponents[firstTargetPos] -= 1
+                        opponents[cf.PRISON] += 1
+                    player[firstTargetPos] += 1
+                    player[x] -= 1
+                else:
+                    continue
+
+                if (12 - (y - 12)) == diceRolls[1]:
+                    player[y] -= 1
+                    player[cf.GOAL] += 1
+                elif secondTargetPos < 24 and opponents[secondTargetPos] < 2:
+                    if opponents[secondTargetPos] == 1:
+                        opponents[secondTargetPos] -= 1
+                        opponents[cf.PRISON] += 1
+                    player[secondTargetPos] += 1
+                    player[y] -= 1
+                else:
+                    continue
+                possibleStates.append(newState)
+        return np.asarray(possibleStates)
 
     def moveOneToken(self, diceRolls):
         # TODO: Implement this function
@@ -186,8 +193,8 @@ class GameState:
             curPos = self[0][tokenID]
             firstTargetPos = curPos + diceRolls[0]
             secondTargetPos = curPos + diceRolls[1]
-            firstSpaceOccupants = opponents == firstTargetPos
-            secondSpaceOccupants = opponents == secondTargetPos
+            opponents[firstTargetPos] = opponents == firstTargetPos
+            opponents[secondTargetPos] = opponents == secondTargetPos
 
     def moveOneTokenHome(self, diceRolls):
         # TODO: Implement this function
@@ -198,12 +205,12 @@ class GameState:
             curPos = self[0][tokenID]
             firstTargetPos = curPos + diceRolls[0]
             secondTargetPos = curPos + diceRolls[1]
-            firstSpaceOccupants = opponents == firstTargetPos
-            secondSpaceOccupants = opponents == secondTargetPos
+            opponents[firstTargetPos] = opponents == firstTargetPos
+            opponents[secondTargetPos] = opponents == secondTargetPos
 
     def getWinner(self):
         for player_id in range(2):
-            if np.all(self[player_id] == 99):
+            if self[player_id][cf.GOAL] == 15:
                 return player_id
         return -1
 
@@ -221,44 +228,37 @@ class Game:
         player = self.players[self.currentPlayerId]
 
         diceRolls = [random.randint(1, 6), random.randint(1, 6)]
-
         relativeState = state.getStateRelativeToPlayer(self.currentPlayerId)
 
-        #TODO: Needs to handle if only one die can be used
-        if all(item >= 18 for item in relativeState[0]):
-            relativeNextStates = np.array([
-                relativeState.moveTokenHome(firstTokenID, secondTokenID, diceRolls) for firstTokenID in range(15) for
-                secondTokenID in range(15)]
-            )
-            if np.all(relativeNextStates is False):
-                relativeNextStates = np.array(
-                    relativeState.moveOneTokenHome(diceRolls)
-                )
+        if sum(relativeState[0][18:25:1]) == 15:
+            relativeNextStates = relativeState.moveTokenHome(diceRolls)
+            #if np.all(relativeNextStates is False):
+            #    relativeNextStates = np.array(
+            #        relativeState.moveOneTokenHome(diceRolls)
+            #    )
         else:
-            relativeNextStates = np.array([
-                relativeState.moveToken(firstTokenID, secondTokenID, diceRolls) for firstTokenID in range(15) for secondTokenID in range(15)]
-            )
-            if np.all(relativeNextStates is False):
-                relativeNextStates = np.array(
-                    relativeState.moveOneToken(diceRolls)
-                )
-        if np.any(relativeNextStates is not False):
-            tokenID = player.play(relativeState, diceRolls, relativeNextStates)
-            if not tokenID:
+            relativeNextStates = relativeState.moveToken(diceRolls)
+
+            #if np.all(relativeNextStates is False):
+            #    relativeNextStates = np.array(
+            #        relativeState.moveOneToken(diceRolls)
+            #    )
+
+        if relativeNextStates.size > 0:
+            nextStateID = player.play(relativeState, diceRolls, relativeNextStates)
+            if not nextStateID > - 1:
                 return
-            elif isinstance(tokenID, np.ndarray):
-                tokenID = tokenID[0]
-            elif relativeNextStates[tokenID] is False:
+            if nextStateID > relativeNextStates.size - 1:
                 logging.warning("Player chose invalid move. Choosing first valid move.")
-                tokenID = np.argwhere(relativeNextStates is not False)[0][0]
-            self.state = relativeNextStates[tokenID].getStateRelativeToPlayer((-self.currentPlayerId) % 2)
-            #print("Player 1",  " State: ", self.state[0])
-            #print("Player 2", " State: ", self.state[1])
+                nextStateID = relativeNextStates[0]
+            self.state = relativeNextStates[nextStateID].getStateRelativeToPlayer((-self.currentPlayerId) % 2)
+            # print("Player 1",  " State: ", self.state[0])
+            # print("Player 2", " State: ", self.state[1])
 
     def playFullGame(self):
         while self.state.getWinner() == -1:
-            #print("Player 1", " State: ", self.state[0])
-            #print("Player 2", " State: ", self.state[1])
+            print("Player 1", " State: ", self.state[0])
+            print("Player 2", " State: ", self.state[1])
             self.step()
         return self.state.getWinner()
 
