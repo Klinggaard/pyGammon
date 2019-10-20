@@ -197,7 +197,6 @@ class GameState:
             opponents[secondTargetPos] = opponents == secondTargetPos
 
     def moveOneTokenHome(self, diceRolls):
-        # TODO: Implement this function
         possibleStates = []
         indices = np.where(self[0] > 0)[0]
         for x in indices:
