@@ -29,6 +29,10 @@ class GameState:
         return self.state.__iter__()
 
     def getStateRelativeToPlayer(self, relativePlayerID):
+        '''
+        :param relativePlayerID: Player id
+        :return:
+        '''
         if relativePlayerID == 0:
             return GameState(self.state.copy())
 
@@ -41,6 +45,10 @@ class GameState:
         return rel
 
     def moveToken(self, diceRolls):
+        '''
+        :param diceRolls: Two values between 1 and 6 on a list
+        :return:
+        '''
         # TODO: Implement moving the same token twice
         # diceRolls is a list of the two dice rolls
         possibleStates = []
@@ -138,6 +146,10 @@ class GameState:
         return np.asarray(possibleStates)
 
     def moveTokenHome(self, diceRolls):
+        '''
+        :param diceRolls: Two values between 1 and 6 on a list
+        :return:
+        '''
         # TODO: Return two states when tokenIds are the same
         # TODO: Can bear off the last relative to the goal with higher number.
         # diceRolls is a list of the two dice rolls
@@ -197,6 +209,10 @@ class GameState:
             opponents[secondTargetPos] = opponents == secondTargetPos
 
     def moveOneTokenHome(self, diceRolls):
+        '''
+        :param diceRolls: Two values between 1 and 6 on a list
+        :return:
+        '''
         possibleStates = []
         indices = np.where(self[0] > 0)[0]
         for x in indices:
@@ -249,6 +265,9 @@ class GameState:
 
 
     def getWinner(self):
+        '''
+        :return: Winner of the game
+        '''
         for player_id in range(2):
             if self[player_id][cf.GOAL] == 15:
                 return player_id
@@ -266,9 +285,9 @@ class Game:
         state = self.state
         self.currentPlayerId = (self.currentPlayerId + 1) % 2
         player = self.players[self.currentPlayerId]
-
         diceRolls = [random.randint(1, 6), random.randint(1, 6)]
         relativeState = state.getStateRelativeToPlayer(self.currentPlayerId)
+        #print(player.name, relativeState.state)
 
         if sum(relativeState[0][18:25:1]) == 15:
             relativeNextStates = relativeState.moveTokenHome(diceRolls)
@@ -296,8 +315,8 @@ class Game:
 
     def playFullGame(self):
         while self.state.getWinner() == -1:
-            print("Player 1", " State: ", self.state[0])
-            print("Player 2", " State: ", self.state[1])
+            # print("Player 1", " State: ", self.state[0])
+            # print("Player 2", " State: ", self.state[1])
             self.step()
         return self.state.getWinner()
 

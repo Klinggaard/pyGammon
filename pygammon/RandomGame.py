@@ -1,26 +1,19 @@
 from pygammon.game import Game
+from pygammon import players as p
 import random
 import time
 import numpy as np
 
-class randomPlayer:
-    """ takes a random valid action """
-    name = 'random'
-
-    @staticmethod
-    def play(state, dice_roll, next_states):
-        choice = random.randrange(len(next_states))
-        #print(choice)
-        return choice
 
 
-players = [randomPlayer(), randomPlayer()]
+
+players = [p.randomPlayer(), p.randomPlayer()]
 for i, player in enumerate(players):
     player.id = i
 
 score = [0, 0]
 
-n = 10
+n = 100
 
 start_time = time.time()
 for i in range(n):
@@ -31,5 +24,5 @@ for i in range(n):
     print('Game ', i, ' done')
 duration = time.time() - start_time
 
-print('win distribution:', score)
+print('win distribution:\n', players[0].name, score[players[0].id], "\n", players[1].name, score[players[1].id])
 print('games per second:', n / duration)
