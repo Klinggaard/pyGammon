@@ -380,6 +380,7 @@ class Game:
         self.players = players
         self.currentPlayerId = -1
         self.state = GameState() if state is None else state
+        self.stepCount = 0
 
     def step(self):
         state = self.state
@@ -416,6 +417,8 @@ class Game:
             # print("Player 1", " State: ", self.state[0])
             # print("Player 2", " State: ", self.state[1])
             self.step()
+            self.stepCount += 1
+        print(self.stepCount)
         return self.state.getWinner()
 
 

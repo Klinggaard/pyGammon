@@ -7,7 +7,7 @@ import numpy as np
 
 
 
-players = [p.randomPlayer(), p.aggressivePlayer]
+players = [p.simpleDefensivePlayer, p.aggressivePlayer]
 for i, player in enumerate(players):
     player.id = i
 
