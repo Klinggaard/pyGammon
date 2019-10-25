@@ -35,15 +35,18 @@ class aggressivePlayer:
         prison = []
         # print(len(prison))
         choice = None
-        print("states", len(next_states))
+        #print("states", len(next_states))
+        newStateIdx = -1
+        maxNumPris = 0
         for i in range(len(next_states)):
-            if next_states[i][1][cf.PRISON] > state[1][cf.PRISON]:
-                prison.append(i)
-        print("prison", len(prison))
-        if len(prison):
-            choice = random.choice(prison)
+            newPrisoners = next_states[i][1][cf.PRISON] - state[1][cf.PRISON]
+            if newPrisoners > maxNumPris:
+                newStateIdx = i
+        #print("prison", len(prison))
+        if newStateIdx >= 0:
+            choice = newStateIdx
         else:
             choice = random.randrange(len(next_states))
 
-        print(choice)
+        #print(choice)
         return choice

@@ -3,6 +3,7 @@ import logging
 import numpy as np
 from pygammon import config as cf
 
+
 # noinspection PyPep8Naming
 class GameState:
     def __init__(self, state=None, empty=False):
@@ -43,6 +44,10 @@ class GameState:
         rel1 = np.flip(self.state[0][0:24:1])
         rel[1] = np.append(rel1, self.state[0][24:26:1])
         return rel
+
+    @staticmethod
+    def _move(state, tokenIdx, die):
+        return
 
     def moveToken(self, diceRolls):
         '''
@@ -91,6 +96,30 @@ class GameState:
                     # If it is not one of the tokens, no move possible
                     if not (x == cf.PRISON or y == cf.PRISON):
                         continue
+                    elif x == y:
+                        if opponents[diceRolls[0] - 1] < 2 and opponents[diceRolls[0]-1 + diceRolls[1]] < 2:
+                            if opponents[diceRolls[0]-1] == 1:
+                                opponents[diceRolls[0] - 1] -= 1
+                                opponents[cf.PRISON] += 1
+                            if opponents[diceRolls[0]-1 + diceRolls[1]] == 1:
+                                opponents[diceRolls[0]-1 + diceRolls[1]] -= 1
+                                opponents[cf.PRISON] += 1
+                            player[diceRolls[0]-1 + diceRolls[1]] += 1
+                            player[cf.PRISON] -= 1
+                            possibleStates.append(newState)
+                        newState = self.copy()
+                        player = newState[0]
+                        opponents = newState[1]
+                        if opponents[diceRolls[1] - 1] < 2 and opponents[diceRolls[1]-1 + diceRolls[0]] < 2:
+                            if opponents[diceRolls[1]-1] == 1:
+                                opponents[diceRolls[1] - 1] -= 1
+                                opponents[cf.PRISON] += 1
+                            if opponents[diceRolls[1]-1 + diceRolls[0]] == 1:
+                                opponents[diceRolls[1]-1 + diceRolls[0]] -= 1
+                                opponents[cf.PRISON] += 1
+                            player[diceRolls[1]-1 + diceRolls[0]] += 1
+                            player[cf.PRISON] -= 1
+                            possibleStates.append(newState)
                     else:
                         if x == cf.PRISON:
                             if secondTargetPos > 23:
@@ -126,7 +155,36 @@ class GameState:
                             player[cf.PRISON] -= 1
                             possibleStates.append(newState)
                 else:
-                    if firstTargetPos > 23 or secondTargetPos > 23:
+                    if x == y:
+                        if firstTargetPos < 24 and opponents[firstTargetPos] < 2 \
+                                and firstTargetPos + diceRolls[1] < 24 and opponents[firstTargetPos+diceRolls[1]] < 2:
+                            if opponents[firstTargetPos] == 1:
+                                opponents[firstTargetPos] -= 1
+                                opponents[cf.PRISON] += 1
+                            if opponents[firstTargetPos+diceRolls[1]] == 1:
+                                opponents[firstTargetPos+diceRolls[1]] -= 1
+                                opponents[cf.PRISON] += 1
+                            player[firstTargetPos+diceRolls[1]] += 1
+                            player[x] -= 1
+                            possibleStates.append(newState)
+                        newState = self.copy()
+                        player = newState[0]
+                        opponents = newState[1]
+                        if secondTargetPos < 24 and opponents[secondTargetPos] < 2 \
+                                and secondTargetPos + diceRolls[0] < 24 and opponents[secondTargetPos + diceRolls[0]] < 2:
+                            if opponents[secondTargetPos] == 1:
+                                opponents[secondTargetPos] -= 1
+                                opponents[cf.PRISON] += 1
+                            if opponents[secondTargetPos+diceRolls[0]] == 1:
+                                opponents[secondTargetPos+diceRolls[0]] -= 1
+                                opponents[cf.PRISON] += 1
+                            player[secondTargetPos+diceRolls[0]] += 1
+                            player[x] -= 1
+                            possibleStates.append(newState)
+                    newState = self.copy()
+                    player = newState[0]
+                    opponents = newState[1]
+                    if firstTargetPos > 23 or opponents[firstTargetPos] > 1 or secondTargetPos > 23 or opponents[secondTargetPos] > 1:
                         continue
                     if x == y and player[x] < 2:
                         continue
@@ -151,10 +209,10 @@ class GameState:
         :return:
         '''
         # TODO: Return two states when tokenIds are the same
-        # TODO: Can bear off the last relative to the goal with higher number.
         # diceRolls is a list of the two dice rolls
         possibleStates = []
         indices = np.where(self[0] > 0)[0]
+        minPos = np.min(indices)
         for x in indices:
             for y in indices:
                 if x == cf.GOAL or y == cf.GOAL:
@@ -166,53 +224,55 @@ class GameState:
                     continue
                 firstTargetPos = x + diceRolls[0]
                 secondTargetPos = y + diceRolls[1]
-                if firstTargetPos < 24:
-                    opponents[firstTargetPos] = opponents[firstTargetPos]
-                if secondTargetPos < 24:
-                    opponents[secondTargetPos] = opponents[secondTargetPos]
-                if (12 - (x-12)) == diceRolls[0]:
+
+                if ((12 - (x-12)) == diceRolls[0]) or (x == minPos and x + diceRolls[0] > 23):
                     player[x] -= 1
                     player[cf.GOAL] += 1
-                elif firstTargetPos < 24 and opponents[firstTargetPos] < 2:
+                    if ((12 - (y - 12)) == diceRolls[1]) or (y == minPos and y + diceRolls[1] > 23):
+                        player[y] -= 1
+                        player[cf.GOAL] += 1
+                    possibleStates.append(newState)
+                    newState = self.copy()
+                    player = newState[0]
+                    opponents = newState[1]
+
+                    if secondTargetPos < 24 and opponents[secondTargetPos] < 2:
+                        if opponents[secondTargetPos] == 1:
+                            opponents[secondTargetPos] -= 1
+                            opponents[cf.PRISON] += 1
+                        player[secondTargetPos] += 1
+                        player[y] -= 1
+                    possibleStates.append(newState)
+
+                newState = self.copy()
+                player = newState[0]
+                opponents = newState[1]
+                if firstTargetPos < 24 and opponents[firstTargetPos] < 2:
                     if opponents[firstTargetPos] == 1:
                         opponents[firstTargetPos] -= 1
                         opponents[cf.PRISON] += 1
                     player[firstTargetPos] += 1
                     player[x] -= 1
-                else:
-                    continue
+                    if ((12 - (y - 12)) == diceRolls[1]) or (y == minPos and y + diceRolls[1] > 23):
+                        player[y] -= 1
+                        player[cf.GOAL] += 1
+                    possibleStates.append(newState)
+                    newState = self.copy()
+                    player = newState[0]
+                    opponents = newState[1]
 
-                if (12 - (y - 12)) == diceRolls[1]:
-                    player[y] -= 1
-                    player[cf.GOAL] += 1
-                elif secondTargetPos < 24 and opponents[secondTargetPos] < 2:
-                    if opponents[secondTargetPos] == 1:
-                        opponents[secondTargetPos] -= 1
-                        opponents[cf.PRISON] += 1
-                    player[secondTargetPos] += 1
-                    player[y] -= 1
+                    if secondTargetPos < 24 and opponents[secondTargetPos] < 2:
+                        if opponents[secondTargetPos] == 1:
+                            opponents[secondTargetPos] -= 1
+                            opponents[cf.PRISON] += 1
+                        player[secondTargetPos] += 1
+                        player[y] -= 1
+                    possibleStates.append(newState)
                 else:
                     continue
-                possibleStates.append(newState)
         return np.asarray(possibleStates)
 
     def moveOneToken(self, diceRolls):
-        # TODO: Implement this function
-        newState = self.copy()
-        player = newState[0]
-        opponents = newState[1]
-        for tokenID in range(15):
-            curPos = self[0][tokenID]
-            firstTargetPos = curPos + diceRolls[0]
-            secondTargetPos = curPos + diceRolls[1]
-            opponents[firstTargetPos] = opponents == firstTargetPos
-            opponents[secondTargetPos] = opponents == secondTargetPos
-
-    def moveOneTokenHome(self, diceRolls):
-        '''
-        :param diceRolls: Two values between 1 and 6 on a list
-        :return:
-        '''
         possibleStates = []
         indices = np.where(self[0] > 0)[0]
         for x in indices:
@@ -221,23 +281,65 @@ class GameState:
             newState = self.copy()
             player = newState[0]
             opponents = newState[1]
-
             targetPos = x + diceRolls[0]
-            if targetPos < 24:
-                opponents[targetPos] = opponents[targetPos]
-
-            if (12 - (x - 12)) == diceRolls[0]:
-                player[x] -= 1
-                player[cf.GOAL] += 1
-            elif targetPos < 24 and opponents[targetPos] < 2:
+            if targetPos < 24 and opponents[targetPos] < 2:
                 if opponents[targetPos] == 1:
                     opponents[targetPos] -= 1
                     opponents[cf.PRISON] += 1
                 player[targetPos] += 1
                 player[x] -= 1
-            else:
+                possibleStates.append(newState)
+
+        for y in indices:
+            if y is cf.GOAL:
                 continue
-            possibleStates.append(newState)
+            newState = self.copy()
+            player = newState[0]
+            opponents = newState[1]
+            targetPos = y + diceRolls[1]
+            if targetPos < 24 and opponents[targetPos] < 2:
+                if opponents[targetPos] == 1:
+                    opponents[targetPos] -= 1
+                    opponents[cf.PRISON] += 1
+                player[targetPos] += 1
+                player[y] -= 1
+                possibleStates.append(newState)
+
+        return np.asarray(possibleStates)
+
+    def moveOneTokenHome(self, diceRolls):
+        '''
+        :param diceRolls: Two values between 1 and 6 on a list
+        :return:
+        '''
+        possibleStates = []
+        indices = np.where(self[0] > 0)[0]
+        minPos = np.min(indices)
+        for x in indices:
+            if x is cf.GOAL:
+                continue
+            newState = self.copy()
+            player = newState[0]
+            opponents = newState[1]
+            targetPos = x + diceRolls[0]
+
+            if ((12 - (x - 12)) == diceRolls[0]) or (x == minPos and x + diceRolls[0] > 23):
+                player[x] -= 1
+                player[cf.GOAL] += 1
+                possibleStates.append(newState)
+
+            newState = self.copy()
+            player = newState[0]
+            opponents = newState[1]
+
+            if targetPos < 24 and opponents[targetPos] < 2:
+                if opponents[targetPos] == 1:
+                    opponents[targetPos] -= 1
+                    opponents[cf.PRISON] += 1
+                player[targetPos] += 1
+                player[x] -= 1
+                possibleStates.append(newState)
+
         for y in indices:
             if y is cf.GOAL:
                 continue
@@ -246,23 +348,21 @@ class GameState:
             opponents = newState[1]
 
             targetPos = y + diceRolls[1]
-            if targetPos < 24:
-                opponents[targetPos] = opponents[targetPos]
-
-            if (12 - (y - 12)) == diceRolls[1]:
+            if ((12 - (y - 12)) == diceRolls[1]) or (y == minPos and y + diceRolls[1] > 23):
                 player[y] -= 1
                 player[cf.GOAL] += 1
-            elif targetPos < 24 and opponents[targetPos] < 2:
+                possibleStates.append(newState)
+            newState = self.copy()
+            player = newState[0]
+            opponents = newState[1]
+            if targetPos < 24 and opponents[targetPos] < 2:
                 if opponents[targetPos] == 1:
                     opponents[targetPos] -= 1
                     opponents[cf.PRISON] += 1
                 player[targetPos] += 1
                 player[y] -= 1
-            else:
-                continue
-            possibleStates.append(newState)
+                possibleStates.append(newState)
         return np.asarray(possibleStates)
-
 
     def getWinner(self):
         '''
@@ -291,16 +391,14 @@ class Game:
 
         if sum(relativeState[0][18:25:1]) == 15:
             relativeNextStates = relativeState.moveTokenHome(diceRolls)
-            #print(relativeNextStates)
-            if sum(relativeState[0][18:24:1] == 1):
+
+            if not len(relativeNextStates):
                 relativeNextStates = relativeState.moveOneTokenHome(diceRolls)
         else:
             relativeNextStates = relativeState.moveToken(diceRolls)
 
-            #if np.all(relativeNextStates is False):
-            #    relativeNextStates = np.array(
-            #        relativeState.moveOneToken(diceRolls)
-            #    )
+            if not len(relativeNextStates):
+                relativeNextStates = relativeState.moveOneToken(diceRolls)
 
         if relativeNextStates.size > 0:
             nextStateID = player.play(relativeState, diceRolls, relativeNextStates)
