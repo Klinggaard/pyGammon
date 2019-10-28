@@ -1,6 +1,8 @@
 import random
 import numpy as np
 from pygammon import config as cf
+from pygammon.utils import StateTree
+from pygammon.game import Game
 
 class randomPlayer:
     """ takes a random valid action """
@@ -153,3 +155,78 @@ class fastPlayer:
         #print(choice)
         return choice
 
+
+class monteCarlo:
+    """ Use Monte-Carlo tree search to choose the best action """
+    name = 'monte-carlo'
+
+    def simGame(self, state):
+        players = [randomPlayer, randomPlayer]
+        game = Game(players, state)
+        winner = game.playFullGame()
+        return winner
+
+    def selection(self, node, c_param=1.4):
+        '''
+        :param node: A StateTree object
+        :param c_param: A parameter to weight exploration or exploitation
+        :return: Recursively return a StateTree object
+        '''
+        if not node.leaf:
+            weights = [
+                (c.q / c.n) + c_param * np.sqrt((2 * np.log(node.n) / c.n))
+                for c in node.children
+            ]
+            return self.selection(node.children[np.argmax(weights)], c_param=c_param)
+        return node
+
+    def expansion(self, node, nextStates):
+        '''
+        :param node: A StateTree object
+        :param nextStates: A list of the next possible states from the current state (node.state)
+        '''
+        children = [StateTree() for i in range(len(nextStates))]
+        for i in range(len(children)):
+            children[i].state = nextStates[i]
+        node.children = children
+        node.leaf = False
+
+    def simulation(self, node):
+        '''
+        :param node: A StateTree object
+        :return: number of wins and sims
+        '''
+        state = node.state
+        wins = 0
+        sims = 0
+        for c in node.children:
+            winner = self.simGame(c.state)
+            if winner == 0:
+                c.nWins += 1
+                wins += 1
+            c.nSim += 1
+            sims += 1
+        return wins, sims
+
+    def backpropagation(self, node, wins, sims):
+        '''
+        :param node: A StateTree object
+        :param wins: number of wins
+        :param sims: number of sims
+        '''
+        node.nWins += wins
+        node.nSim += sims
+        if not node.root:
+            self.backpropagation(node.parent)
+
+    @staticmethod
+    def play(state, dice_roll, next_states):
+        '''
+        :param state: Current state of the game
+        :param dice_roll: Two values between 1 and 6 on a list
+        :param next_states: A list of the next possible steps
+        :return: The index of the chosen next state
+        '''
+        choice = random.randrange(next_states[:].size)
+        #print(choice)
+        return choice
