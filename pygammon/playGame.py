@@ -4,13 +4,13 @@ import random
 import time
 import numpy as np
 
-players = [p.randomPlayer, p.monteCarlo]
+players = [p.fastPlayer, p.monteCarlo]
 for i, player in enumerate(players):
     player.id = i
 
 score = [0, 0]
 
-n = 5
+n = 10
 
 start_time = time.time()
 for i in range(n):

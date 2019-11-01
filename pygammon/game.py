@@ -399,6 +399,19 @@ class Game:
         self.currentPlayerId = -1
         self.state = GameState() if state is None else state
         self.stepCount = 0
+    @staticmethod
+    def getRelativeStates(currentState, diceRolls):
+        if sum(currentState[0][18:25:1]) == 15:
+            relativeNextStates = currentState.moveTokenHome(diceRolls)
+
+            if not len(relativeNextStates):
+                relativeNextStates = currentState.moveOneTokenHome(diceRolls)
+        else:
+            relativeNextStates = currentState.moveToken(diceRolls)
+
+            if not len(relativeNextStates):
+                relativeNextStates = currentState.moveOneToken(diceRolls)
+        return relativeNextStates
 
     def step(self):
         state = self.state
@@ -408,16 +421,7 @@ class Game:
         relativeState = state.getStateRelativeToPlayer(self.currentPlayerId)
         #print(player.name, relativeState.state)
 
-        if sum(relativeState[0][18:25:1]) == 15:
-            relativeNextStates = relativeState.moveTokenHome(diceRolls)
-
-            if not len(relativeNextStates):
-                relativeNextStates = relativeState.moveOneTokenHome(diceRolls)
-        else:
-            relativeNextStates = relativeState.moveToken(diceRolls)
-
-            if not len(relativeNextStates):
-                relativeNextStates = relativeState.moveOneToken(diceRolls)
+        relativeNextStates = Game.getRelativeStates(relativeState, diceRolls)
 
         if relativeNextStates.size > 0:
             nextStateID = player.play(relativeState, diceRolls, relativeNextStates)
