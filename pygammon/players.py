@@ -1,5 +1,6 @@
 import random
 import numpy as np
+import time
 from pygammon import config as cf
 from pygammon.utils import StateTree
 from pygammon.game import Game
@@ -160,13 +161,15 @@ class monteCarlo:
     """ Use Monte-Carlo tree search to choose the best action """
     name = 'monte-carlo'
 
-    def simGame(self, state):
+    @staticmethod
+    def simGame(state):
         players = [randomPlayer, randomPlayer]
         game = Game(players, state)
         winner = game.playFullGame()
         return winner
 
-    def selection(self, node, c_param=1.4):
+    @staticmethod
+    def selection(node, c_param=1.4):
         '''
         :param node: A StateTree object
         :param c_param: A parameter to weight exploration or exploitation
@@ -177,10 +180,11 @@ class monteCarlo:
                 (c.q / c.n) + c_param * np.sqrt((2 * np.log(node.n) / c.n))
                 for c in node.children
             ]
-            return self.selection(node.children[np.argmax(weights)], c_param=c_param)
+            return monteCarlo.selection(node.children[np.argmax(weights)], c_param=c_param)
         return node
 
-    def expansion(self, node, nextStates):
+    @staticmethod
+    def expansion(node, nextStates):
         '''
         :param node: A StateTree object
         :param nextStates: A list of the next possible states from the current state (node.state)
@@ -191,7 +195,8 @@ class monteCarlo:
         node.children = children
         node.leaf = False
 
-    def simulation(self, node):
+    @staticmethod
+    def simulation(node):
         '''
         :param node: A StateTree object
         :return: number of wins and sims
@@ -200,24 +205,25 @@ class monteCarlo:
         wins = 0
         sims = 0
         for c in node.children:
-            winner = self.simGame(c.state)
+            winner = monteCarlo.simGame(c.state)
             if winner == 0:
                 c.nWins += 1
                 wins += 1
-            c.nSim += 1
+            c.nSims += 1
             sims += 1
         return wins, sims
 
-    def backpropagation(self, node, wins, sims):
+    @staticmethod
+    def backpropagation(node, wins, sims):
         '''
         :param node: A StateTree object
         :param wins: number of wins
         :param sims: number of sims
         '''
         node.nWins += wins
-        node.nSim += sims
+        node.nSims += sims
         if not node.root:
-            self.backpropagation(node.parent)
+            monteCarlo.backpropagation(node.parent)
 
     @staticmethod
     def play(state, dice_roll, next_states):
@@ -227,6 +233,28 @@ class monteCarlo:
         :param next_states: A list of the next possible steps
         :return: The index of the chosen next state
         '''
-        choice = random.randrange(next_states[:].size)
-        #print(choice)
+        nowTime = time.time()
+        numTimesRun = 1
+        # Build the starting tree
+        root = StateTree(state, [], True)
+        root.leaf = True
+        # Next follow the Monte carlo steps (First for the root where the next_states are known beforehand
+        expandNode = monteCarlo.selection(root)
+        monteCarlo.expansion(expandNode, next_states)
+        win, sim = monteCarlo.simulation(expandNode)
+        monteCarlo.backpropagation(expandNode, win, sim)
+        for x in range(0, numTimesRun-1):
+            expandNode = monteCarlo.selection(root)
+            # TODO Function that returns next_states for the expandNode
+            monteCarlo.expansion(expandNode, next_states)
+            win, sim = monteCarlo.simulation(expandNode)
+            monteCarlo.backpropagation(expandNode, win, sim)
+
+        possilbeStates = root.children
+        winRatio = [
+            n.getWinRatio()
+            for n in possilbeStates
+        ]
+        choice = np.argmax(winRatio)
+        #print("Step Time: ", time.time()-nowTime)
         return choice

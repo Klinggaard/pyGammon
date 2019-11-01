@@ -4,7 +4,6 @@ import numpy as np
 from pygammon import config as cf
 
 
-# noinspection PyPep8Naming
 class GameState:
     def __init__(self, state=None, empty=False):
         if state is not None:
@@ -54,7 +53,6 @@ class GameState:
         :param diceRolls: Two values between 1 and 6 on a list
         :return:
         '''
-        # TODO: Implement moving the same token twice
         # diceRolls is a list of the two dice rolls
         possibleStates = []
         indices = np.where(self[0] > 0)[0]
@@ -208,7 +206,7 @@ class GameState:
         :param diceRolls: Two values between 1 and 6 on a list
         :return:
         '''
-        # TODO: Return two states when tokenIds are the same
+        # TODO: Return two states when tokenIds are the same / Implement moving the same token twice
         # diceRolls is a list of the two dice rolls
         possibleStates = []
         indices = np.where(self[0] > 0)[0]
@@ -276,34 +274,54 @@ class GameState:
         possibleStates = []
         indices = np.where(self[0] > 0)[0]
         for x in indices:
+            newState = self.copy()
+            player = newState[0]
+            opponents = newState[1]
             if x is cf.GOAL:
                 continue
-            newState = self.copy()
-            player = newState[0]
-            opponents = newState[1]
-            targetPos = x + diceRolls[0]
-            if targetPos < 24 and opponents[targetPos] < 2:
-                if opponents[targetPos] == 1:
-                    opponents[targetPos] -= 1
+            if player[cf.PRISON] > 0 and x is cf.PRISON:
+                if opponents[diceRolls[0] - 1] > 1:
+                    continue
+                if opponents[diceRolls[0] - 1] == 1:
+                    opponents[diceRolls[0] - 1] -= 1
                     opponents[cf.PRISON] += 1
-                player[targetPos] += 1
-                player[x] -= 1
+                player[diceRolls[0] - 1] += 1
+                player[cf.PRISON] -= 1
                 possibleStates.append(newState)
+            elif player[cf.PRISON] == 0:
+                targetPos = x + diceRolls[0]
+                if targetPos < 24 and opponents[targetPos] < 2:
+                    if opponents[targetPos] == 1:
+                        opponents[targetPos] -= 1
+                        opponents[cf.PRISON] += 1
+                    player[targetPos] += 1
+                    player[x] -= 1
+                    possibleStates.append(newState)
 
         for y in indices:
-            if y is cf.GOAL:
-                continue
             newState = self.copy()
             player = newState[0]
             opponents = newState[1]
-            targetPos = y + diceRolls[1]
-            if targetPos < 24 and opponents[targetPos] < 2:
-                if opponents[targetPos] == 1:
-                    opponents[targetPos] -= 1
+            if y is cf.GOAL:
+                continue
+            if player[cf.PRISON] > 0 and y is cf.PRISON:
+                if opponents[diceRolls[1] - 1] > 1:
+                    continue
+                if opponents[diceRolls[1] - 1] == 1:
+                    opponents[diceRolls[1] - 1] -= 1
                     opponents[cf.PRISON] += 1
-                player[targetPos] += 1
-                player[y] -= 1
+                player[diceRolls[1] - 1] += 1
+                player[cf.PRISON] -= 1
                 possibleStates.append(newState)
+            elif player[cf.PRISON] == 0:
+                targetPos = y + diceRolls[1]
+                if targetPos < 24 and opponents[targetPos] < 2:
+                    if opponents[targetPos] == 1:
+                        opponents[targetPos] -= 1
+                        opponents[cf.PRISON] += 1
+                    player[targetPos] += 1
+                    player[y] -= 1
+                    possibleStates.append(newState)
 
         return np.asarray(possibleStates)
 
@@ -418,7 +436,8 @@ class Game:
             # print("Player 2", " State: ", self.state[1])
             self.step()
             self.stepCount += 1
-        print(self.stepCount)
+        if(self.players[0].name=="monte-carlo" or self.players[1].name=="monte-carlo"):
+            print(self.stepCount)
         return self.state.getWinner()
 
 
