@@ -10,7 +10,7 @@ for i, player in enumerate(players):
 
 score = [0, 0]
 
-n = 10
+n = 100
 
 start_time = time.time()
 for i in range(n):
@@ -23,3 +23,4 @@ duration = time.time() - start_time
 
 print('win distribution:\n', players[0].name, score[players[0].id], "\n", players[1].name, score[players[1].id])
 print('games per second:', n / duration)
+print("avrg game length: ", duration/n)

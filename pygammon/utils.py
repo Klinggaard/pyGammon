@@ -1,6 +1,3 @@
-playerColors = ['blue', 'red']
-
-
 class StateTree:
     def __init__(self, state=None, children=[], root=False, parent=None):
         self.state = state

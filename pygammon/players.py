@@ -5,6 +5,9 @@ from pygammon import config as cf
 from pygammon.utils import StateTree
 from pygammon.game import Game
 
+statesTotal = 0
+expTimes = 0
+simTimes = 0
 class randomPlayer:
     """ takes a random valid action """
     name = 'random'
@@ -35,9 +38,7 @@ class aggressivePlayer:
         :return: The index of the chosen next state
         '''
         prison = []
-        # print(len(prison))
         choice = None
-        #print("states", len(next_states))
         newStateIdx = -1
         maxNumPris = 0
         for i in range(len(next_states)):
@@ -45,11 +46,10 @@ class aggressivePlayer:
             if newPrisoners > maxNumPris:
                 maxNumPris = newPrisoners
                 newStateIdx = i
-        #print("prison", len(prison))
         if newStateIdx >= 0:
             choice = newStateIdx
         else:
-            choice = random.randrange(len(next_states))
+            choice = random.randrange(next_states[:].size)
 
         #print(choice)
         return choice
@@ -163,7 +163,7 @@ class monteCarlo:
 
     @staticmethod
     def simGame(state):
-        players = [randomPlayer, randomPlayer]
+        players = [fastPlayer, fastPlayer]
         game = Game(players, state)
         winner = game.playFullGame()
         return winner
@@ -189,12 +189,18 @@ class monteCarlo:
         :param node: A StateTree object
         :param nextStates: A list of the next possible states from the current state (node.state)
         '''
+
+        global statesTotal
+        global expTimes
+        statesTotal += len(nextStates)
+        expTimes += 1
         children = [StateTree() for i in range(len(nextStates))]
         for i in range(len(children)):
             children[i].state = nextStates[i]
             children[i].parent = node
         node.children = children
-        node.leaf = False
+        if len(children):
+            node.leaf = False
 
     @staticmethod
     def simulation(node):
@@ -205,7 +211,9 @@ class monteCarlo:
         state = node.state
         wins = 0
         sims = 0
+        global simTimes
         for c in node.children:
+            simTimes += 1
             winner = monteCarlo.simGame(c.state)
             if winner == 0:
                 c.nWins += 1
@@ -246,9 +254,10 @@ class monteCarlo:
         :param next_states: A list of the next possible steps
         :return: The index of the chosen next state
         '''
-        #TODO Dont expand node if the state is a done game
+        global simTimes
+        simTimes = 0
         nowTime = time.time()
-        numTimesRun = 2
+        numTimesRun = 10
         # Build the starting tree
         root = StateTree(state, [], True)
         root.leaf = True
@@ -272,5 +281,7 @@ class monteCarlo:
             for n in possilbeStates
         ]
         choice = np.argmax(winRatio)
-        print("Step Time: ", time.time()-nowTime)
+        # print("AVGR:", statesTotal / expTimes)
+        # print("Number of sims:", simTimes)
+        # print("Step Time:", time.time()-nowTime)
         return choice

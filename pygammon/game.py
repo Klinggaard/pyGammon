@@ -277,9 +277,9 @@ class GameState:
             newState = self.copy()
             player = newState[0]
             opponents = newState[1]
-            if x is cf.GOAL:
+            if x == cf.GOAL:
                 continue
-            if player[cf.PRISON] > 0 and x is cf.PRISON:
+            if player[cf.PRISON] > 0 and x == cf.PRISON:
                 if opponents[diceRolls[0] - 1] > 1:
                     continue
                 if opponents[diceRolls[0] - 1] == 1:
@@ -302,9 +302,9 @@ class GameState:
             newState = self.copy()
             player = newState[0]
             opponents = newState[1]
-            if y is cf.GOAL:
+            if y == cf.GOAL:
                 continue
-            if player[cf.PRISON] > 0 and y is cf.PRISON:
+            if player[cf.PRISON] > 0 and y == cf.PRISON:
                 if opponents[diceRolls[1] - 1] > 1:
                     continue
                 if opponents[diceRolls[1] - 1] == 1:
@@ -334,7 +334,7 @@ class GameState:
         indices = np.where(self[0] > 0)[0]
         minPos = np.min(indices)
         for x in indices:
-            if x is cf.GOAL:
+            if x == cf.GOAL:
                 continue
             newState = self.copy()
             player = newState[0]
@@ -359,7 +359,7 @@ class GameState:
                 possibleStates.append(newState)
 
         for y in indices:
-            if y is cf.GOAL:
+            if y == cf.GOAL:
                 continue
             newState = self.copy()
             player = newState[0]
@@ -413,11 +413,15 @@ class Game:
                 relativeNextStates = currentState.moveOneToken(diceRolls)
         return relativeNextStates
 
-    def step(self):
+    def step(self, debug=False):
         state = self.state
         self.currentPlayerId = (self.currentPlayerId + 1) % 2
         player = self.players[self.currentPlayerId]
         diceRolls = [random.randint(1, 6), random.randint(1, 6)]
+        if debug:
+            playerName = "red" if self.currentPlayerId == 1 else "blue"
+            print("Player: ", playerName)
+            print("Dice Rolls", diceRolls)
         relativeState = state.getStateRelativeToPlayer(self.currentPlayerId)
         #print(player.name, relativeState.state)
 
@@ -442,6 +446,7 @@ class Game:
             self.stepCount += 1
         if(self.players[0].name=="monte-carlo" or self.players[1].name=="monte-carlo"):
             print(self.stepCount)
+
         return self.state.getWinner()
 
 
