@@ -177,7 +177,7 @@ class monteCarlo:
         '''
         if not node.leaf:
             weights = [
-                (c.q / c.n) + c_param * np.sqrt((2 * np.log(node.n) / c.n))
+                (c.nWins / c.nSims) + c_param * np.sqrt((2 * np.log(node.nSims) / c.nSims))
                 for c in node.children
             ]
             return monteCarlo.selection(node.children[np.argmax(weights)], c_param=c_param)
@@ -192,6 +192,7 @@ class monteCarlo:
         children = [StateTree() for i in range(len(nextStates))]
         for i in range(len(children)):
             children[i].state = nextStates[i]
+            children[i].parent = node
         node.children = children
         node.leaf = False
 
@@ -223,7 +224,19 @@ class monteCarlo:
         node.nWins += wins
         node.nSims += sims
         if not node.root:
-            monteCarlo.backpropagation(node.parent)
+            monteCarlo.backpropagation(node.parent, wins, sims)
+
+    @staticmethod
+    def moveOppOneStep(state):
+        diceRolls = [random.randint(1, 6), random.randint(1, 6)]
+        oppState = state.getStateRelativeToPlayer(1)
+        next_states = Game.getRelativeStates(oppState, diceRolls)
+        if next_states.size > 0:
+            choice = random.randrange(next_states[:].size)
+            nextOppState = next_states[choice]
+            nextOppState = nextOppState.getStateRelativeToPlayer(1)
+            state[1] = nextOppState[1]
+        return state
 
     @staticmethod
     def play(state, dice_roll, next_states):
@@ -233,8 +246,9 @@ class monteCarlo:
         :param next_states: A list of the next possible steps
         :return: The index of the chosen next state
         '''
+        #TODO Dont expand node if the state is a done game
         nowTime = time.time()
-        numTimesRun = 1
+        numTimesRun = 2
         # Build the starting tree
         root = StateTree(state, [], True)
         root.leaf = True
@@ -245,7 +259,9 @@ class monteCarlo:
         monteCarlo.backpropagation(expandNode, win, sim)
         for x in range(0, numTimesRun-1):
             expandNode = monteCarlo.selection(root)
-            # TODO Function that returns next_states for the expandNode
+            state = monteCarlo.moveOppOneStep(expandNode.state)
+            dice_roll = [random.randint(1, 6), random.randint(1, 6)]
+            next_states = Game.getRelativeStates(state, dice_roll)
             monteCarlo.expansion(expandNode, next_states)
             win, sim = monteCarlo.simulation(expandNode)
             monteCarlo.backpropagation(expandNode, win, sim)
@@ -256,5 +272,5 @@ class monteCarlo:
             for n in possilbeStates
         ]
         choice = np.argmax(winRatio)
-        #print("Step Time: ", time.time()-nowTime)
+        print("Step Time: ", time.time()-nowTime)
         return choice
