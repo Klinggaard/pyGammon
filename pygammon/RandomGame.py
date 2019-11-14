@@ -13,7 +13,7 @@ for i, player in enumerate(players):
 
 score = [0, 0]
 
-n = 100
+n = 100*10
 
 start_time = time.time()
 for i in range(n):
@@ -21,8 +21,9 @@ for i in range(n):
     game = Game(players)
     winner = game.playFullGame()
     score[players[winner].id] += 1
-    print('Game ', i, ' done')
+    #print('Game ', i, ' done')
 duration = time.time() - start_time
 
 print('win distribution:\n', players[0].name, score[players[0].id], "\n", players[1].name, score[players[1].id])
 print('games per second:', n / duration)
+print('That took {} seconds'.format(duration))
