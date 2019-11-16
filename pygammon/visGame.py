@@ -5,7 +5,7 @@ from pygammon.visualizer import VisualizerStep
 import pyglet
 import numpy as np
 
-players = [p.fastPlayer, p.monteCarlo]
+players = [p.randomPlayer, p.randomPlayer]
 
 state = np.empty((2, 26), dtype=np.int)  # 2 players, 15 tokens per player
 state[0] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, 0, 0, 2]

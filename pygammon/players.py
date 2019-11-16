@@ -257,7 +257,7 @@ class monteCarlo:
         global simTimes
         simTimes = 0
         nowTime = time.time()
-        numTimesRun = 10
+        numTimesRun = 30
         # Build the starting tree
         root = StateTree(state, [], True)
         root.leaf = True
@@ -271,6 +271,7 @@ class monteCarlo:
             state = monteCarlo.moveOppOneStep(expandNode.state)
             dice_roll = [random.randint(1, 6), random.randint(1, 6)]
             next_states = Game.getRelativeStates(state, dice_roll)
+            next_states = Game.trimStates(next_states)
             monteCarlo.expansion(expandNode, next_states)
             win, sim = monteCarlo.simulation(expandNode)
             monteCarlo.backpropagation(expandNode, win, sim)
@@ -281,7 +282,7 @@ class monteCarlo:
             for n in possilbeStates
         ]
         choice = np.argmax(winRatio)
-        # print("AVGR:", statesTotal / expTimes)
-        # print("Number of sims:", simTimes)
-        # print("Step Time:", time.time()-nowTime)
+        #print("AVGR:", statesTotal / expTimes)
+        #print("Number of sims:", simTimes)
+        #print("Step Time:", time.time()-nowTime)
         return choice
