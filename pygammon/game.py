@@ -1,6 +1,7 @@
 import random
 import logging
 import numpy as np
+import time
 from pygammon import config as cf
 
 
@@ -27,6 +28,10 @@ class GameState:
 
     def __iter__(self):
         return self.state.__iter__()
+
+    def __eq__(self, other):
+        """Overrides the default implementation"""
+        return np.array_equal(self.state, other.state)
 
     def getStateRelativeToPlayer(self, relativePlayerID):
         '''
@@ -229,22 +234,26 @@ class GameState:
                     if ((12 - (y - 12)) == diceRolls[1]) or (y == minPos and y + diceRolls[1] > 23):
                         player[y] -= 1
                         player[cf.GOAL] += 1
-                    possibleStates.append(newState)
+                        possibleStates.append(newState)
+
                     newState = self.copy()
                     player = newState[0]
                     opponents = newState[1]
 
+                    player[x] -= 1
+                    player[cf.GOAL] += 1
                     if secondTargetPos < 24 and opponents[secondTargetPos] < 2:
                         if opponents[secondTargetPos] == 1:
                             opponents[secondTargetPos] -= 1
                             opponents[cf.PRISON] += 1
                         player[secondTargetPos] += 1
                         player[y] -= 1
-                    possibleStates.append(newState)
+                        possibleStates.append(newState)
 
                 newState = self.copy()
                 player = newState[0]
                 opponents = newState[1]
+
                 if firstTargetPos < 24 and opponents[firstTargetPos] < 2:
                     if opponents[firstTargetPos] == 1:
                         opponents[firstTargetPos] -= 1
@@ -254,10 +263,16 @@ class GameState:
                     if ((12 - (y - 12)) == diceRolls[1]) or (y == minPos and y + diceRolls[1] > 23):
                         player[y] -= 1
                         player[cf.GOAL] += 1
-                    possibleStates.append(newState)
+                        possibleStates.append(newState)
+
                     newState = self.copy()
                     player = newState[0]
                     opponents = newState[1]
+                    if opponents[firstTargetPos] == 1:
+                        opponents[firstTargetPos] -= 1
+                        opponents[cf.PRISON] += 1
+                    player[firstTargetPos] += 1
+                    player[x] -= 1
 
                     if secondTargetPos < 24 and opponents[secondTargetPos] < 2:
                         if opponents[secondTargetPos] == 1:
@@ -265,9 +280,7 @@ class GameState:
                             opponents[cf.PRISON] += 1
                         player[secondTargetPos] += 1
                         player[y] -= 1
-                    possibleStates.append(newState)
-                else:
-                    continue
+                        possibleStates.append(newState)
         return np.asarray(possibleStates)
 
     def moveOneToken(self, diceRolls):
@@ -366,13 +379,16 @@ class GameState:
             opponents = newState[1]
 
             targetPos = y + diceRolls[1]
+
             if ((12 - (y - 12)) == diceRolls[1]) or (y == minPos and y + diceRolls[1] > 23):
                 player[y] -= 1
                 player[cf.GOAL] += 1
                 possibleStates.append(newState)
+
             newState = self.copy()
             player = newState[0]
             opponents = newState[1]
+
             if targetPos < 24 and opponents[targetPos] < 2:
                 if opponents[targetPos] == 1:
                     opponents[targetPos] -= 1
@@ -399,8 +415,24 @@ class Game:
         self.currentPlayerId = -1
         self.state = GameState() if state is None else state
         self.stepCount = 0
+
+    @staticmethod
+    def trimStates(possibleStates):
+        #TODO Optimize the code if possible
+        nowTime = time.time()
+        if len(possibleStates) == 0:
+            return possibleStates
+        states = []
+        for x in range(len(possibleStates)):
+            if not possibleStates[x] in states:
+                states.append(possibleStates[x])
+        print("Time:", (time.time() - nowTime)*100)
+        return np.asarray(states)
+
     @staticmethod
     def getRelativeStates(currentState, diceRolls):
+        if not sum(currentState[0][0:26:1]) == 15:
+            print(sum(currentState[0][0:26:1]))
         if sum(currentState[0][18:25:1]) == 15:
             relativeNextStates = currentState.moveTokenHome(diceRolls)
 
@@ -426,6 +458,7 @@ class Game:
         #print(player.name, relativeState.state)
 
         relativeNextStates = Game.getRelativeStates(relativeState, diceRolls)
+        relativeNextStates = Game.trimStates(relativeNextStates)
 
         if relativeNextStates.size > 0:
             nextStateID = player.play(relativeState, diceRolls, relativeNextStates)
