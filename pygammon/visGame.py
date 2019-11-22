@@ -11,7 +11,7 @@ state = np.empty((2, 26), dtype=np.int)  # 2 players, 15 tokens per player
 state[0] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, 0, 0, 2]
 state[1] = [5, 5, 0, 5, 0, 5, 0, 3, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0]
 
-gameState = GameState(state)
+gameState = GameState()
 
 game = Game(players)
 window = VisualizerStep(game)
