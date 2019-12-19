@@ -426,7 +426,7 @@ class Game:
         for x in range(len(possibleStates)):
             if not possibleStates[x] in states:
                 states.append(possibleStates[x])
-        print("Time:", (time.time() - nowTime)*100)
+        #print("Time:", (time.time() - nowTime)*100)
         return np.asarray(states)
 
     @staticmethod
