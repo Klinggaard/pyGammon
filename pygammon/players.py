@@ -97,8 +97,6 @@ class simpleDefensivePlayer:
         :param next_states: A list of the next possible steps
         :return: The index of the chosen next state
         '''
-        prison = []
-        choice = None
         newStateIdx = -1
         maxNumSafe = 0
         currentUnsafe = len(np.where(state[0] == 1)[0])
@@ -108,7 +106,6 @@ class simpleDefensivePlayer:
             if changeOfUnsafe > maxNumSafe:
                 maxNumSafe = changeOfUnsafe
                 newStateIdx = i
-        #print("prison", len(prison))
         if newStateIdx >= 0:
             choice = newStateIdx
         else:
@@ -263,6 +260,7 @@ class monteCarlo:
         root.leaf = True
         # Next follow the Monte carlo steps (First for the root where the next_states are known beforehand
         expandNode = monteCarlo.selection(root)
+        next_states = Game.trimStates(next_states) #TODO TRIM
         monteCarlo.expansion(expandNode, next_states)
         win, sim = monteCarlo.simulation(expandNode)
         monteCarlo.backpropagation(expandNode, win, sim)
@@ -271,7 +269,7 @@ class monteCarlo:
             state = monteCarlo.moveOppOneStep(expandNode.state)
             dice_roll = [random.randint(1, 6), random.randint(1, 6)]
             next_states = Game.getRelativeStates(state, dice_roll)
-            next_states = Game.trimStates(next_states)
+            next_states = Game.trimStates(next_states) #TODO TRIM
             monteCarlo.expansion(expandNode, next_states)
             win, sim = monteCarlo.simulation(expandNode)
             monteCarlo.backpropagation(expandNode, win, sim)
