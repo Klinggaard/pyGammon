@@ -678,7 +678,7 @@ class GameState:
                                 newState = self.copy()
                                 player = newState[0]
                                 opponents = newState[1]
-                                if x + diceRolls[0] + diceRolls[0] < 24 and z + diceRolls[0] < 24 and w + diceRolls[0] < 24 and opponents[x + diceRolls[0]] < 2 and opponents[x + diceRolls[0] + diceRolls[0]] < 2 and opponents[w + diceRolls[0]] < 2:
+                                if player[x] > 1 and x + diceRolls[0] + diceRolls[0] < 24 and z + diceRolls[0] < 24 and w + diceRolls[0] < 24 and opponents[x + diceRolls[0]] < 2 and opponents[x + diceRolls[0] + diceRolls[0]] < 2 and opponents[w + diceRolls[0]] < 2:
                                     if opponents[x + diceRolls[0]] == 1:
                                         opponents[x + diceRolls[0]] -= 1
                                         opponents[cf.PRISON] += 1
