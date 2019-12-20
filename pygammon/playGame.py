@@ -4,7 +4,7 @@ import random
 import time
 import numpy as np
 
-players = [p.randomPlayer, p.monteCarlo]
+players = [p.TD_gammon, p.randomPlayer]
 for i, player in enumerate(players):
     player.id = i
 

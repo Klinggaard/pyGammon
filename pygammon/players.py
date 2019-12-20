@@ -8,12 +8,13 @@ from pygammon.game import Game
 statesTotal = 0
 expTimes = 0
 simTimes = 0
+
 class randomPlayer:
     """ takes a random valid action """
     name = 'random'
 
     @staticmethod
-    def play(state, dice_roll, next_states):
+    def play(self, state, dice_roll, next_states):
         '''
         :param state: Current state of the game
         :param dice_roll: Two values between 1 and 6 on a list
@@ -30,7 +31,7 @@ class aggressivePlayer:
     name = 'aggressive'
 
     @staticmethod
-    def play(state, dice_roll, next_states):
+    def play(self, state, dice_roll, next_states):
         '''
         :param state: Current state of the game
         :param dice_roll: Two values between 1 and 6 on a list
@@ -59,7 +60,7 @@ class fastAggressivePlayer:
     name = 'fastAggressive'
 
     @staticmethod
-    def play(state, dice_roll, next_states):
+    def play(self, state, dice_roll, next_states):
         '''
         :param state: Current state of the game
         :param dice_roll: Two values between 1 and 6 on a list
@@ -90,7 +91,7 @@ class simpleDefensivePlayer:
     name = 'simpleDefensive'
 
     @staticmethod
-    def play(state, dice_roll, next_states):
+    def play(self, state, dice_roll, next_states):
         '''
         :param state: Current state of the game
         :param dice_roll: Two values between 1 and 6 on a list
@@ -118,7 +119,7 @@ class fastPlayer:
     name = 'fast'
 
     @staticmethod
-    def play(state, dice_roll, next_states):
+    def play(self, state, dice_roll, next_states):
         '''
         :param state: Current state of the game
         :param dice_roll: Two values between 1 and 6 on a list
@@ -157,6 +158,9 @@ class fastPlayer:
 class monteCarlo:
     """ Use Monte-Carlo tree search to choose the best action """
     name = 'monte-carlo'
+
+    def __init__(self, max_depth=10):
+        self.max_depth = max_depth
 
     @staticmethod
     def simGame(state):
@@ -244,7 +248,7 @@ class monteCarlo:
         return state
 
     @staticmethod
-    def play(state, dice_roll, next_states):
+    def play(self, state, dice_roll, next_states):
         '''
         :param state: Current state of the game
         :param dice_roll: Two values between 1 and 6 on a list
@@ -254,7 +258,6 @@ class monteCarlo:
         global simTimes
         simTimes = 0
         nowTime = time.time()
-        numTimesRun = 30
         # Build the starting tree
         root = StateTree(state, [], True)
         root.leaf = True
@@ -264,7 +267,7 @@ class monteCarlo:
         monteCarlo.expansion(expandNode, next_states)
         win, sim = monteCarlo.simulation(expandNode)
         monteCarlo.backpropagation(expandNode, win, sim)
-        for x in range(0, numTimesRun-1):
+        for x in range(0, self.max_depth-1):
             expandNode = monteCarlo.selection(root)
             state = monteCarlo.moveOppOneStep(expandNode.state)
             dice_roll = [random.randint(1, 6), random.randint(1, 6)]
@@ -284,3 +287,31 @@ class monteCarlo:
         #print("Number of sims:", simTimes)
         #print("Step Time:", time.time()-nowTime)
         return choice
+
+class TD_gammon:
+    """ An implementation of TD-Gammon """
+    name = 'TD-gammon'
+
+    num_hidden = 50
+    weights_hidden = None
+    weights_input = None
+
+    def __init__(self, num_hidden=50):
+        self.num_hidden = num_hidden
+        weights
+
+    #def convertData(self, state):
+
+    #def forword(self):
+
+    #def backword(self):
+
+    #def updateElig(self):
+
+    def play(self, state, dice_roll, next_states):
+        '''
+        :param state: Current state of the game
+        :param dice_roll: Two values between 1 and 6 on a list
+        :param next_states: A list of the next possible steps
+        :return: The index of the chosen next state
+        '''

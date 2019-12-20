@@ -528,7 +528,7 @@ class Game:
 
         relativeNextStates = Game.getRelativeStates(relativeState, diceRolls)
         if relativeNextStates.size > 0:
-            nextStateID = player.play(relativeState, diceRolls, relativeNextStates)
+            nextStateID = player.play(player, relativeState, diceRolls, relativeNextStates)
             if not nextStateID > - 1:
                 return
             if nextStateID > relativeNextStates.size - 1:
