@@ -163,7 +163,7 @@ class monteCarlo:
 
     @staticmethod
     def simGame(state):
-        players = [fastPlayer, fastPlayer]
+        players = [fastPlayer(), fastPlayer()]
         game = Game(players, state)
         winner = game.playFullGame()
         return winner

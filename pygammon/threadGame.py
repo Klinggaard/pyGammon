@@ -9,6 +9,14 @@ import smtplib
 
 retList = []
 
+depth = [10,30,50]
+
+threads = 40
+n_games = 1000
+
+if n_games < threads:
+    threads = n_games
+
 
 def email_data(body, to='oliver.klinggaard@gmail.com', subject='pygammon - data'):
     gmail_user = 'pygammonmail@gmail.com'
@@ -33,26 +41,34 @@ def email_data(body, to='oliver.klinggaard@gmail.com', subject='pygammon - data'
 
 
 def basic_func():
-    players = [pl.monteCarlo(), pl.randomPlayer()]
-    for j, player in enumerate(players):
-        player.id = j
+    body = ""
 
-    score = [0, 0]
+    # TODO for loop
+    for d in depth:
+        players = [pl.monteCarlo(), pl.randomPlayer()]
+        for j, player in enumerate(players):
+            player.id = j
 
-    n = 100
+        score = [0, 0]
 
-    start_time = time.time()
-    for j in range(n):
-        random.shuffle(players)
-        game = Game(players)
-        winner = game.playFullGame()
-        score[players[winner].id] += 1
-        print('Game ', j, ' done')
-    duration = time.time() - start_time
-    body = str(str(players[0].name) + ":" + str(score[players[0].id]) + ";" + str(players[1].name) + ":" + str(
-        score[players[1].id]))
+        n = int(n_games/threads)
+
+        # start_time = time.time()
+        for j in range(n):
+            random.shuffle(players)
+            game = Game(players)
+            winner = game.playFullGame()
+            score[players[winner].id] += 1
+            print('Game ', j, ' done')
+        # duration = time.time() - start_time
+
+
+        body += str(str(d)+","+str(players[0].name) + ":" + str(score[players[0].id]) + "," + str(players[1].name) + ":" + str(
+            score[players[1].id])+"\n")
+
+
     email_data(body=body)
-    return (players[0].name, score[players[0].id]), (players[1].name, score[players[1].id])
+    return body
 
 
 def multiprocessing_func():
@@ -63,7 +79,7 @@ def multiprocessing_func():
 if __name__ == '__main__':
     starttime = time.time()
     processes = []
-    for i in range(0, 1):
+    for i in range(0, threads):
         p = multiprocessing.Process(target=multiprocessing_func)
         processes.append(p)
         p.start()
