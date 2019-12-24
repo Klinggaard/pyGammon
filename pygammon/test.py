@@ -1,4 +1,5 @@
 import numpy as np
+import random
 
 
 def moveToken (id1, id2):
@@ -6,27 +7,18 @@ def moveToken (id1, id2):
     print("id2:", id2)
     return id1
 
-relativeNextStates = np.array([[
-            moveToken(tokenID, ID2) for tokenID in range(5) for ID2 in range(5)]]
-        )
+#relativeNextStates = np.array([[
+#            moveToken(tokenID, ID2) for tokenID in range(5) for ID2 in range(5)]]
+#        )
 
-occupants = relativeNextStates == 1
-occupant_count = np.sum(occupants)
+#occupants = relativeNextStates == 1
+#occupant_count = np.sum(occupants)
 
-print(occupants)
-print("oc", occupant_count)
-print("count", np.sum(occupants))
-print(relativeNextStates)
-print("sum", sum(i == 1 for i in relativeNextStates[0]))
-relativeNextStates[occupants] = -1
-print(relativeNextStates)
-print(15*15)
+#array = np.asarray([1,2,3,4,5,6,7])
 
-test = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-x = all(item <= 5 for item in test)
-test = np.asarray(test)
-y = np.all(test == 0)
-print(y)
-print(all(item == 0 for item in test))
-print(test)
-print(x)
+die = np.asarray([0,0,0,0,0,0])
+
+for i in range(10000000):
+    die[random.randint(1, 6)-1] += 1
+
+print(die/10000000)
