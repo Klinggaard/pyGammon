@@ -2,9 +2,9 @@ import random
 import numpy as np
 import time
 import math
-from pygammon import config as cf
-from pygammon.utils import StateTree
-from pygammon.game import Game
+import config as cf
+from utils import StateTree
+from game import Game
 
 statesTotal = 0
 expTimes = 0

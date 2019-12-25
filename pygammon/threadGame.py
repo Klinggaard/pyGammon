@@ -1,5 +1,5 @@
-from pygammon.game import Game
-from pygammon import players as pl
+from game import Game
+import players as pl
 import random
 import time
 import numpy as np
@@ -11,8 +11,8 @@ retList = []
 
 depth = [10,30,50]
 
-threads = 40
-n_games = 1000
+threads = 80
+n_games = 1
 
 if n_games < threads:
     threads = n_games

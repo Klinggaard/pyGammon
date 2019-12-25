@@ -2,7 +2,7 @@ import random
 import logging
 import numpy as np
 import time
-from pygammon import config as cf
+import config as cf
 
 
 class GameState:
