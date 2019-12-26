@@ -12,7 +12,7 @@ retList = []
 depth = [10,30,50]
 
 threads = 80
-n_games = 1000
+n_games = 1
 
 if n_games < threads:
     threads = n_games
@@ -59,7 +59,7 @@ def basic_func():
             game = Game(players)
             winner = game.playFullGame()
             score[players[winner].id] += 1
-            print('Game ', j, ' done')
+            #print('Game ', j, ' done')
         # duration = time.time() - start_time
 
 

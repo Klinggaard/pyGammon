@@ -545,6 +545,6 @@ class Game:
             self.step()
             self.stepCount += 1
         if self.players[0].name == "monte-carlo" or self.players[1].name == "monte-carlo":
-            print("Game moves", self.stepCount)
+            #print("Game moves", self.stepCount)
 
         return self.state.getWinner()
