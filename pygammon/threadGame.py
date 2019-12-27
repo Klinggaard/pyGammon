@@ -12,7 +12,7 @@ retList = []
 depth = [10,30,50]
 
 threads = 80
-n_games = 1
+n_games = 1000
 
 if n_games < threads:
     threads = n_games
