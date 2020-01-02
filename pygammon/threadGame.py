@@ -46,7 +46,7 @@ def basic_func(return_list):
 
     # TODO for loop
     for i, d in enumerate(depth):
-        players = [pl.monteCarlo(), pl.randomPlayer()]
+        players = [pl.monteCarlo(max_depth=d), pl.randomPlayer()]
         for j, player in enumerate(players):
             player.id = j
 
@@ -67,6 +67,7 @@ def basic_func(return_list):
             return_list[i] += score[players[0].id]
         else:
             return_list[i] += score[players[1].id]
+        print(return_list)
 
     print("done")
     # body += str(str(d)+","+str(players[0].name) + ":" + str(score[players[0].id]) + ","
@@ -96,7 +97,7 @@ if __name__ == '__main__':
 
     print(return_list)
 
-    email_data(body=str(return_list))
+    #email_data(body=str(return_list))
     with open("result.csv", 'w', newline='') as myfile:
         wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
         wr.writerow(return_list)
