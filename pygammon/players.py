@@ -292,23 +292,35 @@ class TD_gammon:
     """ An implementation of TD-Gammon """
     name = 'TD-gammon'
 
-    def __init__(self, num_hidden=50, lr=0.1, lam=0.7):
-        self.step = 0
+    def __init__(self, num_hidden=50, lr=0.1, lam=0.7, w_i = None, w_o = None):
+        self.step = 1
         self.train = True
         self.lam = lam
         self.lr = lr
         self.x_h = None
-        self.y_old = np.random.rand(1, 2)
+        self.y_old = np.zeros((1, 2))
 
-        self.input = np.random.rand(198, 1)
+        self.input = np.zeros((198, 1))
 
         self.num_hidden = num_hidden
         self.weights_input = np.random.rand(198, self.num_hidden)
         self.weights_output = np.random.rand(self.num_hidden, 2)
+        if w_i is not None:
+            self.weights_input = w_i
+        if w_o is not None:
+            self.weights_output = w_o
+        #self.weights_input = np.full((198, self.num_hidden), 0.5)
+        #self.weights_output = np.full((self.num_hidden, 2), 0.5)
 
-        self.eli_input = np.random.rand(198, self.num_hidden, 2)
-        self.eli_output = np.random.rand(self.num_hidden, 2)
+        self.eli_input = np.zeros((198, self.num_hidden, 2))
+        self.eli_output = np.zeros((self.num_hidden, 2))
 
+    def reset_step(self):
+        self.step = 1
+
+    def save_weights(self, trainNr):
+        np.savetxt('weights/w_i' + trainNr + '.txt', self.weights_input, fmt='%10.5f')
+        np.savetxt('weights/w_o' + trainNr + '.txt', self.weights_output, fmt='%10.5f')
     def set_train(self, train):
         self.train = train
 
@@ -345,30 +357,34 @@ class TD_gammon:
         self.input[193] = state[1][cf.PRISON] / 2
         self.input[194] = state[0][cf.GOAL] / 15
         self.input[195] = state[1][cf.GOAL] / 15
-        self.input[196] = 0
-        self.input[197] = 1
+        self.input[196] = 1
+        self.input[197] = 0
 
     def forward(self):
         x_h = np.dot(np.transpose(self.input), self.weights_input)
-        self.x_h = np.transpose(1/(1+np.exp(-x_h)))
+        self.x_h = np.transpose(1.0/(1. + np.exp(-x_h)))
+        #self.x_h = np.clip(self.x_h, -1000, 1000)
         y = np.dot(x_h, self.weights_output)
+        y = 1.0/(1. + np.exp(-y))
+        #max_y = max(y[0,0], y[0,1])
+        #y[0, 0] = y[0, 0] / (50*self.num_hidden)
+        #y[0, 1] = y[0, 1] / (50*self.num_hidden)
+        #y = np.clip(y, -1000, 1000)
         return y
 
     def backward(self, error):
         self.weights_output = self.weights_output + self.lr * error * self.eli_output
+        self.weights_output = np.clip(self.weights_output, -1000, 1000)
         for i in range(2):
             self.weights_input = self.weights_input + self.lr * error[0, i] * self.eli_input[:,:,i]
+        self.weights_input = np.clip(self.weights_input, -1000, 1000)
 
     def update_elig(self, y):
-        grad = np.random.rand(1, 2)
-        for k in range(2):
-            grad[0, k] = y[0,k] * (1 - y[0,k])
-
-        self.eli_output = self.lam * self.eli_output + (y*(1-y)*self.x_h)
+        self.eli_output = self.lam * self.eli_output + (y*(1.-y)*self.x_h)
+        self.eli_output = np.clip(self.eli_output, -1000, 1000)
         for i in range(198):
-            self.eli_input[i] = self.lam * self.eli_input[i] + (y * (1 - y) * self.weights_output * self.x_h * (1 - self.x_h) * self.input[i])
-        #self.eli_output = self.lam * self.eli_output+grad*self.x_h
-        #self.eli_input = self.lam *self.eli_input+(grad*self.weights_output*self.x_h*(1-self.x_h)*self.input)
+            self.eli_input[i] = self.lam * self.eli_input[i] + (y * (1. - y) * self.weights_output * self.x_h * (1. - self.x_h) * self.input[i])
+        self.eli_input = np.clip(self.eli_input, -1000, 1000)
 
     def play(self, state, dice_roll, next_states):
         '''
@@ -377,7 +393,7 @@ class TD_gammon:
         :param next_states: A list of the next possible steps
         :return: The index of the chosen next state
         '''
-        max_val = -99999
+        max_val = -float('Inf')
         max_idx = 0
         max_y = np.random.rand(1, 2)
         for x, pos_state in enumerate(next_states):
@@ -386,10 +402,33 @@ class TD_gammon:
             if y[0, 0] > max_val:
                 max_idx = x
                 max_y = y
-        self.y_old = max_y
-        if self.train and self.step > 0:
-            error = max_y - self.y_old
-            self.backward(error)
+                max_val = y[0, 0]
+        winner = GameState.getWinner(next_states[max_idx])
+        if self.train and self.step/2.0 > 1:
+            if winner == -1:
+                if self.step % 2 == 0:
+                    error = max_y - self.y_old_2
+                else:
+                    error = max_y - self.y_old_1
+            else:
+                if winner == 0:
+                    error = max_y
+                    error[0, 0] = 1.0
+                    error[0, 1] = 0.
+                else:
+                    error = max_y
+                    error[0, 0] = 0.
+                    error[0, 1] = 1.
             self.update_elig(max_y)
-        self.step = self.step+1
+            self.backward(error)
+        if self.step % 2 == 0:
+            self.y_old_2 = max_y
+        else:
+            self.y_old_1 = max_y
+        if winner != -1:
+            self.step = 1
+            self.eli_input = np.zeros((198, self.num_hidden, 2))
+            self.eli_output = np.zeros((self.num_hidden, 2))
+        else:
+            self.step = self.step+1
         return max_idx
