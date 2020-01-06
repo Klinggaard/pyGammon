@@ -1,0 +1,16 @@
+lr: 0.1 hidden: 40 lam: 0.5
+win distribution: 0.33
+lr: 0.1 hidden: 40 lam: 0.7
+win distribution: 0.729
+lr: 0.1 hidden: 60 lam: 0.5
+win distribution: 0.375
+lr: 0.1 hidden: 60 lam: 0.7
+win distribution: 0.751
+lr: 0.3 hidden: 40 lam: 0.5
+win distribution: 0.727
+lr: 0.3 hidden: 40 lam: 0.7
+win distribution: 0.747
+lr: 0.3 hidden: 60 lam: 0.5
+win distribution: 0.737
+lr: 0.3 hidden: 60 lam: 0.7
+win distribution: 0.724

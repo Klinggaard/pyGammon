@@ -466,12 +466,13 @@ class GameState:
                 possibleStates.append(newState)
         return np.asarray(possibleStates)
 
-    def getWinner(self):
+    @staticmethod
+    def getWinner(state):
         '''
         :return: Winner of the game
         '''
         for player_id in range(2):
-            if self[player_id][cf.GOAL] == 15:
+            if state[player_id][cf.GOAL] == 15:
                 return player_id
         return -1
 
@@ -539,7 +540,7 @@ class Game:
             # print("Player 2", " State: ", self.state[1])
 
     def playFullGame(self):
-        while self.state.getWinner() == -1:
+        while self.state.getWinner(self.state) == -1:
             # print("Player 1", " State: ", self.state[0])
             # print("Player 2", " State: ", self.state[1])
             self.step()
@@ -547,4 +548,4 @@ class Game:
         #if self.players[0].name == "monte-carlo" or self.players[1].name == "monte-carlo":
             #print("Game moves", self.stepCount)
 
-        return self.state.getWinner()
+        return self.state.getWinner(self.state)
