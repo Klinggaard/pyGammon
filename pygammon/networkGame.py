@@ -7,7 +7,7 @@ import numpy as np
 lrs = [0.1, 0.3]
 hiddens = [40, 60]
 lams = [0.5, 0.7]
-file = open("testFile.txt", "w")
+file = open("tuneParamV2.txt", "w")
 file.close()
 num_pos = len(lrs)*len(hiddens)*len(lams)
 step = 0
@@ -36,7 +36,7 @@ for lr in lrs:
                 winner = game.playFullGame()
                 score[players[winner].id] += 1
 
-            file = open("testFile.txt", "a")
+            file = open("tuneParamV2.txt", "a")
             file.write("lr: " + str(lr) + " hidden: " + str(hidden) + " lam: " + str(lam))
             file.write("\n")
             file.write('win distribution: ' + str(score[players[0].id]/n_test))

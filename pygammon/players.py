@@ -298,7 +298,8 @@ class TD_gammon:
         self.lam = lam
         self.lr = lr
         self.x_h = None
-        self.y_old = np.zeros((1, 2))
+        self.y_old_1 = np.ones((1, 2))
+        self.y_old_2 = np.ones((1, 2))
 
         self.input = np.zeros((198, 1))
 
@@ -317,10 +318,13 @@ class TD_gammon:
 
     def reset_step(self):
         self.step = 1
+        self.eli_input = np.zeros((198, self.num_hidden, 2))
+        self.eli_output = np.zeros((self.num_hidden, 2))
 
     def save_weights(self, trainNr):
-        np.savetxt('weights/w_i' + trainNr + '.txt', self.weights_input, fmt='%10.5f')
-        np.savetxt('weights/w_o' + trainNr + '.txt', self.weights_output, fmt='%10.5f')
+        np.savetxt('weightsV2/w_i' + trainNr + '.txt', self.weights_input, fmt='%10.5f')
+        np.savetxt('weightsV2/w_o' + trainNr + '.txt', self.weights_output, fmt='%10.5f')
+
     def set_train(self, train):
         self.train = train
 
@@ -393,6 +397,17 @@ class TD_gammon:
         :param next_states: A list of the next possible steps
         :return: The index of the chosen next state
         '''
+
+        if self.train and self.step / 2.0 > 1.:
+            self.convert_state(state=state)
+            forward = self.forward()
+            if self.step % 2 == 0:
+                error = forward - self.y_old_2
+            else:
+                error = forward - self.y_old_1
+            self.update_elig(forward)
+            self.backward(error)
+
         max_val = -float('Inf')
         max_idx = 0
         max_y = np.random.rand(1, 2)
@@ -403,32 +418,10 @@ class TD_gammon:
                 max_idx = x
                 max_y = y
                 max_val = y[0, 0]
-        winner = GameState.getWinner(next_states[max_idx])
-        if self.train and self.step/2.0 > 1:
-            if winner == -1:
-                if self.step % 2 == 0:
-                    error = max_y - self.y_old_2
-                else:
-                    error = max_y - self.y_old_1
-            else:
-                if winner == 0:
-                    error = max_y
-                    error[0, 0] = 1.0
-                    error[0, 1] = 0.
-                else:
-                    error = max_y
-                    error[0, 0] = 0.
-                    error[0, 1] = 1.
-            self.update_elig(max_y)
-            self.backward(error)
         if self.step % 2 == 0:
             self.y_old_2 = max_y
         else:
             self.y_old_1 = max_y
-        if winner != -1:
-            self.step = 1
-            self.eli_input = np.zeros((198, self.num_hidden, 2))
-            self.eli_output = np.zeros((self.num_hidden, 2))
-        else:
-            self.step = self.step+1
+
+        self.step = self.step+1
         return max_idx
