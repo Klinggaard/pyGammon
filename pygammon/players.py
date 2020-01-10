@@ -322,8 +322,8 @@ class TD_gammon:
         self.eli_output = np.zeros((self.num_hidden, 2))
 
     def save_weights(self, trainNr):
-        np.savetxt('weightsV2/w_i' + trainNr + '.txt', self.weights_input, fmt='%10.5f')
-        np.savetxt('weightsV2/w_o' + trainNr + '.txt', self.weights_output, fmt='%10.5f')
+        np.savetxt('weightsV3/w_i' + trainNr + '.txt', self.weights_input, fmt='%10.5f')
+        np.savetxt('weightsV3/w_o' + trainNr + '.txt', self.weights_output, fmt='%10.5f')
 
     def set_train(self, train):
         self.train = train
@@ -398,13 +398,10 @@ class TD_gammon:
         :return: The index of the chosen next state
         '''
 
-        if self.train and self.step / 2.0 > 1.:
+        if self.train and self.step > 1.:
             self.convert_state(state=state)
             forward = self.forward()
-            if self.step % 2 == 0:
-                error = forward - self.y_old_2
-            else:
-                error = forward - self.y_old_1
+            error = forward - self.y_old_1
             self.update_elig(forward)
             self.backward(error)
 
@@ -418,10 +415,7 @@ class TD_gammon:
                 max_idx = x
                 max_y = y
                 max_val = y[0, 0]
-        if self.step % 2 == 0:
-            self.y_old_2 = max_y
-        else:
-            self.y_old_1 = max_y
 
+        self.y_old_1 = max_y
         self.step = self.step+1
         return max_idx

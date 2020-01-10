@@ -548,9 +548,25 @@ class Game:
         #if self.players[0].name == "monte-carlo" or self.players[1].name == "monte-carlo":
             #print("Game moves", self.stepCount)
 
+        winner = self.state.getWinner(self.state)
+        error = np.ones((1, 2))
         if self.players[0].name == "TD-gammon":
+            if winner == 0:
+                error[0, 0] = 1
+                error[0, 1] = 0
+            else:
+                error[0, 0] = 0
+                error[0, 1] = 1
+            self.players[0].backward(error)
             self.players[0].reset_step()
         if self.players[1].name == "TD-gammon":
+            if winner == 0:
+                error[0, 0] = 0
+                error[0, 1] = 1
+            else:
+                error[0, 0] = 1
+                error[0, 1] = 0
+            self.players[1].backward(error)
             self.players[1].reset_step()
 
-        return self.state.getWinner(self.state)
+        return winner
