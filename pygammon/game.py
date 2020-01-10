@@ -539,7 +539,7 @@ class Game:
             # print("Player 1",  " State: ", self.state[0])
             # print("Player 2", " State: ", self.state[1])
 
-    def playFullGame(self):
+    def playFullGame(self, get_step=False):
         while self.state.getWinner(self.state) == -1:
             # print("Player 1", " State: ", self.state[0])
             # print("Player 2", " State: ", self.state[1])
@@ -547,7 +547,8 @@ class Game:
             self.stepCount += 1
         #if self.players[0].name == "monte-carlo" or self.players[1].name == "monte-carlo":
             #print("Game moves", self.stepCount)
-
+        if get_step:
+            return self.state.getWinner(self.state), self.stepCount
         #if self.players[0].name == "TD-gammon":
         #    self.players[0].reset_step()
         #if self.players[1].name == "TD-gammon":
