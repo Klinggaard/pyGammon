@@ -548,9 +548,9 @@ class Game:
         #if self.players[0].name == "monte-carlo" or self.players[1].name == "monte-carlo":
             #print("Game moves", self.stepCount)
 
-        if self.players[0].name == "TD-gammon":
-            self.players[0].reset_step()
-        if self.players[1].name == "TD-gammon":
-            self.players[1].reset_step()
+        #if self.players[0].name == "TD-gammon":
+        #    self.players[0].reset_step()
+        #if self.players[1].name == "TD-gammon":
+        #    self.players[1].reset_step()
 
         return self.state.getWinner(self.state)

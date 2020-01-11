@@ -328,7 +328,9 @@ class TD_gammon:
     def set_train(self, train):
         self.train = train
 
-    def convert_state(self, state):
+    def convert_state(self, state, player):
+        if player == 1:
+            state = state.getStateRelativeToPlayer(1)
         for pos in range(24):
             players = (state[0][pos], state[1][pos])
             for i, p in enumerate(players):
@@ -361,34 +363,29 @@ class TD_gammon:
         self.input[193] = state[1][cf.PRISON] / 2
         self.input[194] = state[0][cf.GOAL] / 15
         self.input[195] = state[1][cf.GOAL] / 15
-        self.input[196] = 1
-        self.input[197] = 0
+        if player == 0:
+            self.input[196] = 1
+            self.input[197] = 0
+        else:
+            self.input[196] = 0
+            self.input[197] = 1
 
     def forward(self):
         x_h = np.dot(np.transpose(self.input), self.weights_input)
         self.x_h = np.transpose(1.0/(1. + np.exp(-x_h)))
-        #self.x_h = np.clip(self.x_h, -1000, 1000)
         y = np.dot(x_h, self.weights_output)
         y = 1.0/(1. + np.exp(-y))
-        #max_y = max(y[0,0], y[0,1])
-        #y[0, 0] = y[0, 0] / (50*self.num_hidden)
-        #y[0, 1] = y[0, 1] / (50*self.num_hidden)
-        #y = np.clip(y, -1000, 1000)
         return y
 
     def backward(self, error):
         self.weights_output = self.weights_output + self.lr * error * self.eli_output
-        self.weights_output = np.clip(self.weights_output, -1000, 1000)
         for i in range(2):
             self.weights_input = self.weights_input + self.lr * error[0, i] * self.eli_input[:,:,i]
-        self.weights_input = np.clip(self.weights_input, -1000, 1000)
 
     def update_elig(self, y):
         self.eli_output = self.lam * self.eli_output + (y*(1.-y)*self.x_h)
-        self.eli_output = np.clip(self.eli_output, -1000, 1000)
         for i in range(198):
             self.eli_input[i] = self.lam * self.eli_input[i] + (y * (1. - y) * self.weights_output * self.x_h * (1. - self.x_h) * self.input[i])
-        self.eli_input = np.clip(self.eli_input, -1000, 1000)
 
     def play(self, state, dice_roll, next_states):
         '''
@@ -399,7 +396,10 @@ class TD_gammon:
         '''
 
         if self.train and self.step / 2.0 > 1.:
-            self.convert_state(state=state)
+            if self.step % 2 == 0:
+                self.convert_state(state=state, player=1)
+            else:
+                self.convert_state(state=state, player=0)
             forward = self.forward()
             if self.step % 2 == 0:
                 error = forward - self.y_old_2
@@ -412,7 +412,10 @@ class TD_gammon:
         max_idx = 0
         max_y = np.random.rand(1, 2)
         for x, pos_state in enumerate(next_states):
-            self.convert_state(state=pos_state)
+            if self.step % 2 == 0:
+                self.convert_state(state=pos_state, player=1)
+            else:
+                self.convert_state(state=pos_state, player=0)
             y = self.forward()
             if y[0, 0] > max_val:
                 max_idx = x
@@ -422,6 +425,21 @@ class TD_gammon:
             self.y_old_2 = max_y
         else:
             self.y_old_1 = max_y
+
+        winner = GameState.getWinner(next_states[max_idx])
+        if winner != -1:
+            self.step = 1
+            error = max_y
+            if self.step % 2 == 0:
+                error[0, 0] = 0.
+                error[0, 1] = 1.
+            else:
+                error[0, 0] = 1.
+                error[0, 1] = 0.
+            self.backward(error=error)
+        else:
+            self.step = self.step+1
+
 
         self.step = self.step+1
         return max_idx
