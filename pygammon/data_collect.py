@@ -14,7 +14,7 @@ playerTD.set_train(False)
 player_collection = [pl.randomPlayer(), pl.fastPlayer(), pl.aggressivePlayer(), pl.fastAggressivePlayer(),
                      pl.simpleDefensivePlayer(), playerTD]
 
-n_games = 1000
+n_games = 5000
 
 '''
 DATA TO EXTRACT
